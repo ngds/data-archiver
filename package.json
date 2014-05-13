@@ -1,8 +1,16 @@
 {
   "name": "data-archiver",
   "version": "0.0.1",
-  "description": "Utility for bulk transeferral of NGDS data onto Amazon S3.",
-  "main": "index.js",
+  "description": "Utility for bulk transferral of NGDS data onto Amazon S3.",
+	"private": true,
+  "dependencies": {
+    "aws-sdk": "2.x"
+  },
+  "engines": {
+    "node": "0.10.x",
+    "npm": "1.2.x"
+  }
+  "main": "archive.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,7 +18,7 @@
     "type": "git",
     "url": "https://github.com/ngds/data-archiver.git"
   },
-  "author": "Arizona Geological Survey [Jessica Alisdairi, Adrian Sonnenschein]",
+  "author": "Arizona Geological Survey [Jessica Good Alisdairi, Adrian Sonnenschein]",
   "license": "BSD-2-Clause",
   "bugs": {
     "url": "https://github.com/ngds/data-archiver/issues"
