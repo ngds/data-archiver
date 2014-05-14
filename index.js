@@ -21,22 +21,22 @@ function constructRequest(startPosition, maxRecords) {
     path = "/geothermal/csw?",
     request = "GetRecords",
     service = "CSW",
-    typeNames = "gmd:MD_Metadata",
     resultType = "results",
-    elementSetName = "full";
+    elementSetName = "full",
+    outputSchema = "http://www.isotc211.org/2005/gmd";
   
   return {
     host: host,
-    path: path + "Request=" + request + "&service=" + service + "&typeNames=" + 
-      typeNames + "&resultType=" + resultType + "&elementSetName=" + 
-      elementSetName + "&startPosition=" + startPosition + "&maxRecords=" +
-      maxRecords
+    path: path + "Request=" + request + "&service=" + service + "&resultType=" 
+      + resultType + "&elementSetName=" + elementSetName + "&startPosition=" 
+      + startPosition + "&maxRecords=" + maxRecords + "&outputSchema="
+      + outputSchema
   }
 }
 
 function parseCsw () {
-  var parameters = constructRequest(0, 0);
-  parse.scaleRequest(parameters, function (response) {
-    console.log(response);
+  var parameters = constructRequest(1, 50);
+  parse.parseCsw(parameters, function (response) {
+    parse.pipeLocalFile(response);
   })
 }
