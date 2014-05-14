@@ -35,8 +35,9 @@ function constructRequest(startPosition, maxRecords) {
 }
 
 function parseCsw () {
-  var parameters = constructRequest(1, 50);
+  var parameters = constructRequest(1, 1000);
   parse.parseCsw(parameters, function (response) {
-    parse.pipeLocalFile(response);
+//    parse.writeLocalFile(response);
+    parse.pingUrl(response);
   })
 }

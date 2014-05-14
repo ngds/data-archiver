@@ -47,7 +47,7 @@ module.exports = {
       });
     }).end();
   },
-  pipeLocalFile: function (response) {
+  writeLocalFile: function (response) {
     var outputFile = "./outputs/" + response.id + ".json",
       data = JSON.stringify(response);
 
@@ -60,7 +60,12 @@ module.exports = {
     })
   },
   pingUrl: function (response) {
-
+    var dist = response.dist[0]["gmd:transferOptions"];
+    if (dist) {
+      var link = dist["gmd:MD_DigitalTransferOptions"]["gmd:onLine"]
+        ["gmd:CI_OnlineResource"]["gmd:linkage"]["gmd:URL"];
+      console.log(link);
+    }
   },
   buildDirectory: function () {
   }
