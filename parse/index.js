@@ -1,5 +1,4 @@
-var parser = new expat.Parser("UTF-8"),
-  http = require("http"),
+var http = require("http"),
   xmlStream = require("xml-stream");
 
 module.exports = {

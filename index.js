@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 var async = require("async"),
-  parse = require("parse"),
-  archive = require("archive");
+  parse = require("./parse");
+  //archive = require("./archive");
 
 var argv = require("yargs")
   .usage("Command line utility for archiving NGDS data on Amazon S3")
@@ -36,5 +36,7 @@ function constructRequest(startPosition, maxRecords) {
 
 function parseCsw () {
   var parameters = constructRequest(0, 0);
-  
+  parse.scaleRequest(parameters, function (response) {
+    console.log(response);
+  })
 }
