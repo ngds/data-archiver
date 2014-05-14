@@ -14,54 +14,58 @@ var argv = require("yargs")
   .argv;
 
 var queue = [];
-if (argv.parse) queue.push(scaleRequest);
+if (argv.parse) queue.push(parseCsw);
 
 async.series(queue);
-/*
-function scaleRequest (total, increment, counter) {
-  var counter = 0;
-  increment = typeof increment !== "undefined" ? increment : 100;
 
-  while (counter < total) {
-  	counter += increment;
-  }
-  var placeHolder = (counter-increment),
-    lastRecord = ((increment-(counter-total))+secondToLast);
+function constructRequest(startPosition, maxRecords) {
+  var host = "catalog.usgin.org",
+    path = "/geothermal/csw?",
+    request = "GetRecords",
+    service = "CSW",
+    typeNames = "gmd:MD_Metadata",
+    resultType = "results",
+    elementSetName = "full";
+  
   return {
-  	"placeHolder": lastCounter,
-  	"lastRecord": lastRecord,
+  	host: host,
+  	path: path + "Request=" + request + "&service=" + service + "&typeNames=" + 
+  	  typeNames + "&resultType=" + resultType + "&elementSetName=" + 
+  	  elementSetName + "&startPosition=" + startPosition + "&maxRecords=" +
+  	  maxRecords
   }
 }
-*/
-function scaleRequest (options, callback) {
-  var options = {
-  	host: "catalog.usgin.org",
-  	path: "/geothermal/csw?Request=GetRecords&service=CSW&typeNames=gmd:MD_Metadata&resultType=results&elementSetName=full",
-  };
 
+function scaleRequest (callback) {
+  var parameters = constructRequest(0, 0),
+    counter = 0,
+    total,
+    increment = 100;
 
-  http.get(options).on("response", function (response) {
+  http.get(parameters).on("response", function (response) {
   	var xml = new xmlStream(response, "utf-8");
-  	xml.on("text: dct:references", function (results) {
-//  	  var totalRecords = results.$.numberOfRecordsMatched;
-//  	  var increment = 100;
-      console.log(results);
+  	xml.on("endElement: csw:SearchResults", function (results) {
+      total = results.$.numberOfRecordsMatched
+      while (counter < total) {
+  	    counter += increment;
+      }
+  
+      var placeHolder = (counter-increment),
+      lastRecord = ((increment-(counter-total))+placeHolder);
+
+      if (typeof callback === "function") {
+    	callback({
+  	      "increment": increment,
+  	      "placeHolder": placeHolder,
+  	      "lastRecord": lastRecord,
+        })
+      }
   	})
-  })
+  }).end();
 }
 
-/*
-function initialFunction () {
-  var options = {
-  	host: "catalog.usgin.org",
-  	path: "/egi-geoportal/csw?request=GetRecords&service=CSW&version=2.0.2&resultType=results&maxRecords=100&"
-  }
-
-  http.get(options).on("response", function (response) {
-    var xml = new xmlStream(response, "utf-8");
-  	xml.on("text: dc:identifier", function (item) {
-  	  console.log(item.$text);
-  	})
+function parseCsw () {
+  scaleRequest(function (response) {
+  	console.log(response);
   })
 }
-*/
