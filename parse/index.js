@@ -1,6 +1,7 @@
 var http = require("http"),
   fs = require("fs"),
-  xmlStream = require("xml-stream");
+  xmlStream = require("xml-stream"),
+  request = require("request");
 
 module.exports = {
   scaleRequest: function (increment, parameters, callback) {
@@ -29,11 +30,18 @@ module.exports = {
     }).end();
   },
   parseCsw: function (parameters, callback) {
+    var readline = require("readline");
     http.get(parameters).on("response", function (response) {
       var xml = new xmlStream(response, "utf-8");
+/*
+      xml.on("data", function (results) {
+        process.stdout.write(results);
+      });
+*/
 
       xml.collect("gmd:MD_Distribution");
       xml.on("updateElement: gmd:MD_Metadata", function (results) {
+
         var fileId = results["gmd:fileIdentifier"]["gco:CharacterString"],
           dist = results["gmd:distributionInfo"]["gmd:MD_Distribution"];
 
@@ -44,12 +52,13 @@ module.exports = {
               "record": results,
             });            
           }
+
       });
     }).end();
   },
   writeLocalFile: function (response) {
     var outputFile = "./outputs/" + response.id + ".json",
-      data = JSON.stringify(response);
+      data = JSON.stringify(response.record);
 
     fs.writeFile(outputFile, data, function (err) {
       if (err) {
@@ -61,10 +70,20 @@ module.exports = {
   },
   pingUrl: function (response) {
     var dist = response.dist[0]["gmd:transferOptions"];
+      //wstream = fs.createWriteStream(outputFile);
+
     if (dist) {
       var link = dist["gmd:MD_DigitalTransferOptions"]["gmd:onLine"]
         ["gmd:CI_OnlineResource"]["gmd:linkage"]["gmd:URL"];
-      console.log(link);
+      
+      request(link, function (error, response) {
+        if (!error && response.statusCode == 200) {
+          console.log("GOOD " + link);
+        } else {
+          console.log("BAD " + link);
+//          wstream.write(link);
+        }
+      })
     }
   },
   buildDirectory: function () {
