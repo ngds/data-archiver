@@ -1,7 +1,8 @@
 var http = require("http"),
   fs = require("fs"),
   xmlStream = require("xml-stream"),
-  request = require("request");
+  request = require("request"),
+	ftp = require('ftp-get');
 
 module.exports = {
   scaleRequest: function (increment, parameters, callback) {
@@ -56,7 +57,7 @@ module.exports = {
       });
     }).end();
   },
-  writeLocalFile: function (response) {
+  writeLocalFile: function (response) {	
     var outputFile = "./outputs/" + response.id + ".json",
       data = JSON.stringify(response.record);
 
@@ -67,6 +68,23 @@ module.exports = {
         console.log("File saved: " + outputFile);
       }
     })
+		
+		var dist = response.dist[0]["gmd:transferOptions"];
+      //wstream = fs.createWriteStream(outputFile);
+
+    if (dist) {
+      var link = dist["gmd:MD_DigitalTransferOptions"]["gmd:onLine"]
+        ["gmd:CI_OnlineResource"]["gmd:linkage"]["gmd:URL"];
+			
+			// Write FTP files to local outputs folder
+			if (link.indexOf("ftp") === 0) {
+				var fileName = link.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+				ftp.get(link, "outputs/" + fileName, function (err, res) {
+					if (err) return console.log(err, res);
+					else return console.log("File saved: " + "./outputs/" + fileName);
+				})
+			}
+		}		
   },
   pingUrl: function (response) {
     var dist = response.dist[0]["gmd:transferOptions"];
@@ -76,14 +94,31 @@ module.exports = {
       var link = dist["gmd:MD_DigitalTransferOptions"]["gmd:onLine"]
         ["gmd:CI_OnlineResource"]["gmd:linkage"]["gmd:URL"];
       
-      request(link, function (error, response) {
-        if (!error && response.statusCode == 200) {
-          console.log("GOOD " + link);
-        } else {
-          console.log("BAD " + link);
-//          wstream.write(link);
-        }
-      })
+			// Ping FTP links
+			if (link.indexOf("ftp") === 0) {
+				ftp.head(link, function (error, size) {
+					if (error) {
+						//console.error(error);
+						console.log("BAD " + link);
+					} else {
+						//console.log('The remote file size is: ' + size); // the file size if everything is OK
+						console.log("GOOD " + link);
+					}
+				});
+			}
+			// Ping HTTP links
+			else if (link.indexOf("http") === 0) {
+				request(link, function (error, response) {
+					if (!error && response.statusCode == 200) {
+						console.log("GOOD " + link);
+					} else {
+						console.log("BAD " + link);
+	//          wstream.write(link);
+					}
+				})
+			}
+			else
+				console.error ("Invalid link: " + link);
     }
   },
   buildDirectory: function () {
