@@ -35,10 +35,13 @@ function constructRequest(startPosition, maxRecords) {
 }
 
 function parseCsw () {
-  var parameters = constructRequest(1, 500);
-  parse.parseCsw(parameters, function (response) {
+  var parameters = constructRequest(1, 8);
+  parse.parseCsw(parameters, function (xml) {
+    parse.xmlToJson(xml, function (response) {
+      console.log(response);
+    });
 //    parse.writeLocalFile(response);
-    parse.pingUrl(response);
+//    parse.pingUrl("./outputs/bad_urls.txt", response);
   })
 }
 
