@@ -1,8 +1,10 @@
-var http = require("http"),
-  fs = require("fs"),
-  xmlStream = require("xml-stream"),
-  request = require("request"),
-	ftp = require('ftp-get');
+var	ftp = require('ftp-get');
+var fs = require("fs");
+var request = require("request");
+var sax = require("sax");
+var saxpath = require("saxpath");
+var xml2js = require("xml2js");
+var _ = require("underscore");
 
 module.exports = {
   scaleRequest: function (increment, parameters, callback) {
@@ -31,31 +33,28 @@ module.exports = {
     }).end();
   },
   parseCsw: function (parameters, callback) {
-    var readline = require("readline");
-    http.get(parameters).on("response", function (response) {
-      var xml = new xmlStream(response, "utf-8");
-/*
-      xml.on("data", function (results) {
-        process.stdout.write(results);
-      });
-*/
-
-      xml.collect("gmd:MD_Distribution");
-      xml.on("updateElement: gmd:MD_Metadata", function (results) {
-
-        var fileId = results["gmd:fileIdentifier"]["gco:CharacterString"],
-          dist = results["gmd:distributionInfo"]["gmd:MD_Distribution"];
-
-          if (typeof callback === "function") {
-            callback({
-              "id": fileId,
-              "dist": dist,
-              "record": results,
-            });            
-          }
-
-      });
-    }).end();
+    var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
+    var streamer = new saxpath.SaXPath(saxParser, "//gmd:MD_Metadata");
+    var url = "http://" + parameters.host + parameters.path;
+    
+    request(url).pipe(saxParser);
+    streamer.on("match", function (xml) {
+      callback(xml);
+    })
+  },
+  xmlToJson: function (xml, callback) {
+    var parser = xml2js.parseString;
+    parser(xml, function (error, result) {
+      if (error) callback(error);
+      if (result.hasOwnProperty("gmd:MD_Metadata")) {
+        var fileId = result["gmd:MD_Metadata"]["gmd:fileIdentifier"][0]
+                     ["gco:CharacterString"][0];
+        var dists = result["gmd:MD_Metadata"]["gmd:distributionInfo"][0]
+                    ['gmd:MD_Distribution'][0]["gmd:transferOptions"];
+        callback(fileId);        
+      }
+      callback(fileId);
+    })
   },
   writeLocalFile: function (response) {	
     var outputFile = "./outputs/" + response.id + ".json",
@@ -86,9 +85,9 @@ module.exports = {
 			}
 		}		
   },
-  pingUrl: function (response) {
-    var dist = response.dist[0]["gmd:transferOptions"];
-      //wstream = fs.createWriteStream(outputFile);
+  pingUrl: function (outputFile, response) {
+    var dist = response.dist[0]["gmd:transferOptions"],
+      wstream = fs.createWriteStream(outputFile);
 
     if (dist) {
       var link = dist["gmd:MD_DigitalTransferOptions"]["gmd:onLine"]
