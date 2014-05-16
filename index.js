@@ -3,6 +3,9 @@
 var async = require("async");
 var parse = require("./parse");
 var handle = require("./handle");
+var path = require("path");
+var url = require("url");
+var _ = require("underscore");
   //archive = require("./archive");
 
 var argv = require("yargs")
@@ -36,20 +39,27 @@ function constructRequest(startPosition, maxRecords) {
 }
 
 function parseCsw () {
-  var parameters = constructRequest(1, 100);
+  var parameters = constructRequest(1, 50);
   parse.parseCsw(parameters, function (xml) {
-    handle.downloadFiles(__dirname, xml);
-//    handle.writeXML(xml);
-//    parse.pingUrl(xml);
+		var linkages = xml.linkages;
 
-//    parse.writeLocalFile(response);
+			_.each(linkages, function (linkage) {
+				//handle.pingUrl(linkage);
+				
+				var parsedUrl = url.parse(linkage);
+				var fileName = parsedUrl.path.replace(/^\/*/,"");   // Remove any number of leading slashes (/)
+				fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");  // Replace with an underscore anything that is not a-z, 'A-Z, 0-9, _, . or -
+				var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+				var filePath = path.join(__dirname, "outputs", dirName);
+				
+				if (fileName != "") {
+					handle.buildDirectory(filePath, function() {
+						// Write the metadata ISO19139 XML
+						handle.writeXML(filePath, xml.fileId, xml.fullRecord);
+						// Write the referenced files
+						handle.downloadFile(filePath, fileName, linkage);
+					});
+				}
+			});
   })
 }
-
-
-
-
-
-
-
-
