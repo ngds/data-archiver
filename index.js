@@ -36,10 +36,10 @@ function constructRequest(startPosition, maxRecords) {
 }
 
 function parseCsw () {
-  var parameters = constructRequest(1, 1000);
+  var parameters = constructRequest(1, 100);
   parse.parseCsw(parameters, function (xml) {
-//    parse.downloadFiles(xml);
-    handle.writeXML(xml);
+    handle.downloadFiles(__dirname, xml);
+//    handle.writeXML(xml);
 //    parse.pingUrl(xml);
 
 //    parse.writeLocalFile(response);

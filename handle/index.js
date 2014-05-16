@@ -17,7 +17,7 @@ module.exports = {
       }
     });		
   },
-  downloadFiles: function (response) {
+  downloadFiles: function (baseDir, response) {
     //wstream = fs.createWriteStream(outputFile);
     var linkages = response.linkages;
     _.each(linkages, function (linkage) {
@@ -31,12 +31,14 @@ module.exports = {
         })
       } else if (linkage.indexOf("http") === 0) {
         var fileName = linkage.split("/").pop();
-        var outputFile = ".\\outputs\\" + fileName + "\\";
+        var outputFile = "outputs/" + fileName;
+        
         var download = function (url, destination, cb) {
           var file = fs.createWriteStream(outputFile);
           var request = http.get(url, function (response) {
             response.pipe(file);
             file.on("finish", function () {
+              console.log("File saved: " + outputFile);
               file.close(cb);
             })
           })
@@ -77,6 +79,32 @@ module.exports = {
         console.error ("Invalid link: " + linkage);
     })
   },
-  buildDirectory: function () {
+  buildDirectory: function (path, callback) {
+    fs.exists(path, function (exists) {
+      if (exists) {
+        callback(path + " already exists");
+      } else {
+        fs.mkdir(path, function () {
+          callback(path)
+        })
+      }
+    })
+  },
+  compressDirectory: function (path, callback) {
+
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
