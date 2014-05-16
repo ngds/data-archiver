@@ -96,10 +96,12 @@ module.exports = {
               var endpoint = httpGetPath[0].value;
               var typeName = typeNamePath[0].firstChild.data;
 
-              var getFeatures = endpoint + "request=GetFeature&service" +
-                                "=WFS&version=2.0.0&typeNames=" + typeName;
+              if (typeName === "aasg:WellLog") {
+                var getFeatures = endpoint + "request=GetFeature&service" +
+                                  "=WFS&version=2.0.0&typeNames=" + typeName;
 
-              callback(getFeatures);
+                callback(getFeatures);
+              }
             })
           }
         });
@@ -107,8 +109,23 @@ module.exports = {
     })
   },
   parseGetFeaturesWFS: function (url, callback) {
+    var cheerio = require("cheerio");
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
-    var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");   
+    var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
+    var options = {
+      "url": url,
+      "headers": {
+      "Content-type": "text/xml;charset=utf-8",
+      }      
+    };
+
+    request(options).pipe(saxParser);
+
+    feature.on("match", function (xml) {
+      var $ = cheerio.load(xml);
+      var log = $.getElementById("aasg:LogURI");
+      callback(log);
+    })
   }
 };
 
