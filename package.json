@@ -6,15 +6,19 @@
   "dependencies": {
     "yargs": "1.2.1",
     "async": "0.8.0",
-    "xml-stream": "0.4.4",
     "aws-sdk": "2.x",
     "request": "2.34.0",
-		"ftp-get": "0.3.1"
+		"ftp-get": "0.3.1",
+    "sax": "0.6.0",
+    "saxpath": "0.6.0",
+    "underscore": "1.6.0",
+    "xpath.js": "0.0.3",
+    "xmldom": "0.1.19"
   },
   "description": "Utility for bulk transferral of NGDS data onto Amazon S3.",
   "engines": {
     "node": "0.10.x",
-    "npm": "1.2.x"
+    "npm": "1.3.x"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
