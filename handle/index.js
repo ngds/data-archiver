@@ -30,20 +30,21 @@ module.exports = {
           else return console.log("File saved: " + "./outputs/" + fileName);
         })
       } else if (linkage.indexOf("http") === 0) {
-        var fileName = linkage.split("/").pop();
-        var outputFile = "outputs/" + fileName;
-        
+        var path = require("path");
+        var fileName = linkage.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+        var path = path.join(baseDir, "/outputs/", fileName);
+
         var download = function (url, destination, cb) {
-          var file = fs.createWriteStream(outputFile);
+          var file = fs.createWriteStream(destination);
           var request = http.get(url, function (response) {
             response.pipe(file);
             file.on("finish", function () {
-              console.log("File saved: " + outputFile);
+              console.log("File saved: " + destination);
               file.close(cb);
             })
           })
         }
-        download(linkage, outputFile);
+        download(linkage, path);
       }     
     })
   },
