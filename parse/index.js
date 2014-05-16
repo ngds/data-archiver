@@ -1,10 +1,12 @@
 var	ftp = require('ftp-get');
 var fs = require("fs");
+var http = require("http");
 var request = require("request");
 var sax = require("sax");
 var saxpath = require("saxpath");
-var xml2js = require("xml2js");
 var _ = require("underscore");
+var xpath = require("xpath.js");
+var dom = require("xmldom").DOMParser;
 
 module.exports = {
   scaleRequest: function (increment, parameters, callback) {
@@ -34,31 +36,44 @@ module.exports = {
   },
   parseCsw: function (parameters, callback) {
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
-    var streamer = new saxpath.SaXPath(saxParser, "//gmd:MD_Metadata");
+    var fullRecord = new saxpath.SaXPath(saxParser, "//gmd:MD_Metadata");
     var url = "http://" + parameters.host + parameters.path;
+
+    var options = {
+      "url": url,
+      "headers": {
+        "Content-type": "text/xml;charset=utf-8",
+      }      
+    };
     
-    request(url).pipe(saxParser);
-    streamer.on("match", function (xml) {
-      callback(xml);
-    })
-  },
-  xmlToJson: function (xml, callback) {
-    var parser = xml2js.parseString;
-    parser(xml, function (error, result) {
-      if (error) callback(error);
-      if (result.hasOwnProperty("gmd:MD_Metadata")) {
-        var fileId = result["gmd:MD_Metadata"]["gmd:fileIdentifier"][0]
-                     ["gco:CharacterString"][0];
-        var dists = result["gmd:MD_Metadata"]["gmd:distributionInfo"][0]
-                    ['gmd:MD_Distribution'][0]["gmd:transferOptions"];
-        callback(fileId);        
+    request(options).pipe(saxParser);
+
+    fullRecord.on("match", function (xml) {
+      var doc = new dom().parseFromString(xml);
+      var fileIdPath = xpath(doc, "//gmd:fileIdentifier/gco:CharacterString");
+      var linkagePath = xpath(doc, "//gmd:distributionInfo/gmd:MD_Distributi" + 
+                                   "on/gmd:transferOptions/gmd:MD_DigitalTra" +
+                                   "nsferOptions/gmd:onLine/gmd:CI_OnlineRes" + 
+                                   "ource/gmd:linkage/gmd:URL");
+
+      var fileId = fileIdPath[0].firstChild.data;
+
+      var linkages = _.map(linkagePath, function (linkage) {
+        return linkage.firstChild.data;
+      });
+
+      if (typeof callback === "function") {
+        callback({
+          "fileId": fileId,
+          "linkages": linkages,
+          "fullRecord": xml,
+        })
       }
-      callback(fileId);
-    })
+    });
   },
-  writeLocalFile: function (response) {	
-    var outputFile = "./outputs/" + response.id + ".json",
-      data = JSON.stringify(response.record);
+  writeXML: function (response) {	
+    var outputFile = "./outputs/" + response.fileId + ".xml",
+      data = response.fullRecord;
 
     fs.writeFile(outputFile, data, function (err) {
       if (err) {
@@ -66,59 +81,67 @@ module.exports = {
       } else {
         console.log("File saved: " + outputFile);
       }
-    })
-		
-		var dist = response.dist[0]["gmd:transferOptions"];
-      //wstream = fs.createWriteStream(outputFile);
-
-    if (dist) {
-      var link = dist["gmd:MD_DigitalTransferOptions"]["gmd:onLine"]
-        ["gmd:CI_OnlineResource"]["gmd:linkage"]["gmd:URL"];
-			
-			// Write FTP files to local outputs folder
-			if (link.indexOf("ftp") === 0) {
-				var fileName = link.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-				ftp.get(link, "outputs/" + fileName, function (err, res) {
-					if (err) return console.log(err, res);
-					else return console.log("File saved: " + "./outputs/" + fileName);
-				})
-			}
-		}		
+    });		
   },
-  pingUrl: function (outputFile, response) {
-    var dist = response.dist[0]["gmd:transferOptions"],
-      wstream = fs.createWriteStream(outputFile);
+  downloadFiles: function (response) {
+    //wstream = fs.createWriteStream(outputFile);
+    var linkages = response.linkages;
+    _.each(linkages, function (linkage) {
 
-    if (dist) {
-      var link = dist["gmd:MD_DigitalTransferOptions"]["gmd:onLine"]
-        ["gmd:CI_OnlineResource"]["gmd:linkage"]["gmd:URL"];
-      
-			// Ping FTP links
-			if (link.indexOf("ftp") === 0) {
-				ftp.head(link, function (error, size) {
-					if (error) {
-						//console.error(error);
-						console.log("BAD " + link);
-					} else {
-						//console.log('The remote file size is: ' + size); // the file size if everything is OK
-						console.log("GOOD " + link);
-					}
-				});
-			}
-			// Ping HTTP links
-			else if (link.indexOf("http") === 0) {
-				request(link, function (error, response) {
-					if (!error && response.statusCode == 200) {
-						console.log("GOOD " + link);
-					} else {
-						console.log("BAD " + link);
-	//          wstream.write(link);
-					}
-				})
-			}
-			else
-				console.error ("Invalid link: " + link);
-    }
+      // Write FTP files to local outputs folder
+      if (linkage.indexOf("ftp") === 0) {
+        var fileName = linkage.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+        ftp.get(linkage, "outputs/" + fileName, function (err, res) {
+          if (err) return console.log(err, res);
+          else return console.log("File saved: " + "./outputs/" + fileName);
+        })
+      } else if (linkage.indexOf("http") === 0) {
+        var fileName = linkage.split("/").pop();
+        var outputFile = ".\\outputs\\" + fileName + "\\";
+        var download = function (url, destination, cb) {
+          var file = fs.createWriteStream(outputFile);
+          var request = http.get(url, function (response) {
+            response.pipe(file);
+            file.on("finish", function () {
+              file.close(cb);
+            })
+          })
+        }
+        download(linkage, outputFile);
+      }     
+    })
+  },
+  pingUrl: function (response, outputFile, callback) {
+    var linkages = response.linkages;
+    //var wstream = fs.createWriteStream(outputFile);
+
+    _.each(linkages, function (linkage) {
+      // Ping FTP links
+      if (linkage.indexOf("ftp") === 0) {
+        ftp.head(linkage, function (error, size) {
+          if (error) {
+            //console.error(error);
+            console.log("BAD " + linkage);
+          } else {
+            //console.log('The remote file size is: ' + size); // the file size if everything is OK
+            console.log("GOOD " + linkage);
+          }
+        });
+      }
+      // Ping HTTP links
+      else if (linkage.indexOf("http") === 0) {
+        request(linkage, function (error, response) {
+          if (!error && response.statusCode == 200) {
+            console.log("GOOD " + linkage);
+          } else {
+            console.log("BAD " + linkage);
+            //wstream.write(link);
+          }
+        })
+      }
+      else
+        console.error ("Invalid link: " + linkage);
+    })
   },
   buildDirectory: function () {
   }
