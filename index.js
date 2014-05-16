@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-var async = require("async"),
-  parse = require("./parse");
+var async = require("async");
+var parse = require("./parse");
+var handle = require("./handle");
   //archive = require("./archive");
 
 var argv = require("yargs")
@@ -38,7 +39,7 @@ function parseCsw () {
   var parameters = constructRequest(1, 1000);
   parse.parseCsw(parameters, function (xml) {
 //    parse.downloadFiles(xml);
-    parse.writeXML(xml);
+    handle.writeXML(xml);
 //    parse.pingUrl(xml);
 
 //    parse.writeLocalFile(response);
