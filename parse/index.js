@@ -55,6 +55,7 @@ module.exports = {
                                    "ource/gmd:linkage/gmd:URL");
 
       var fileId = fileIdPath[0].firstChild.data;
+      fileId.replace(/\n$/, "");
 
       var linkages = _.map(linkagePath, function (linkage) {
         return linkage.firstChild.data;
