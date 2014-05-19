@@ -20,8 +20,8 @@ module.exports = {
   },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
-  downloadFile: function (filePath, fileName, linkage) {
-    var outputPath = path.join(filePath, fileName);
+  downloadFile: function (directory, file, linkage) {
+    var outputPath = path.join(directory, file);
         
     // Write FTP files to local outputs folder
     if (linkage.indexOf("ftp") === 0) {
@@ -49,31 +49,44 @@ module.exports = {
   // continue with business as usual.  If not, then write out the URL to a dead
   // links file.
   pingUrl: function (linkage, masterLog, deadLog, callback) {
+    function writeLog (logfile, text) {
+      fs.appendFile(logfile, text, function (error) {
+        if (error) throw error;
+      })
+    };
     // Ping FTP links
     if (linkage.indexOf("ftp") === 0) {
-      ftp.head(linkage, function (error, size) {
+      ftp.head(linkage, function (error) {
         if (error) {
-          //console.error(error);
-          console.log("BAD " + linkage);
+          var status = "DEAD," + linkage + "\n";
+          writeLog(masterLog, status);
+          writeLog(deadLog, linkage + "\n");
+          callback(new Error("Dead FTP: " + linkage));
         } else {
-          //console.log('The remote file size is: ' + size); // the file size if everything is OK
-          console.log("GOOD " + linkage);
+          var status = "ALIVE," + linkage + "\n";
+          writeLog(masterLog, status);
+          callback(null, linkage);
         }
       });
     }
     // Ping HTTP links
     else if (linkage.indexOf("http") === 0) {
       request(linkage, function (error, response) {
-        if (!error && response.statusCode == 200) {
-          console.log("GOOD " + linkage);
+        if (!error && response.statusCode === 200) {
+          var status = "ALIVE," + linkage + "\n";
+          writeLog(masterLog, status);
+          callback(null, linkage);
         } else {
-          console.log("BAD " + linkage);
-          //wstream.write(link);
+          var status = "DEAD," + linkage + "\n";
+          writeLog(masterLog, status);
+          writeLog(deadLog, linkage + "\n");
+          callback(new Error("Dead HTTP: " + linkage));
         }
       })
     }
-    else
-      console.error ("Invalid link: " + linkage);
+    else {
+      callback(new Error("Invalid URL: " + linkage));
+    }
   },
   // Function for building directories, and nothing more.
   buildDirectory: function (path, callback) {

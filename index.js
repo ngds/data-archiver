@@ -68,31 +68,19 @@ function parseCsw () {
   var dirs = constructDirectories();
 
   parse.parseCsw(parameters, function (xml) {
-    var directory = path.join(dirs["records"], xml.fileId);
+    var directory = path.join(dirs["record"], xml.fileId);
     handle.buildDirectory(directory, function () {
-      var outputXml = path.join(directory, fileId, ".xml");
+      var outputXml = path.join(directory, xml.fileId + ".xml");
       handle.writeXML(outputXml, xml.fullRecord);
-
       var pingLog = path.join(dirs["logs"], "linkage-status.csv");
       var deadUrls = path.join(dirs["logs"], "dead-linkages.csv");
       handle.configurePaths(directory, xml.linkages, function (fsys) {
-        handle.pingUrl(fsys.linkage, pingLog, deadUrls, function (status) {
-          
+        handle.pingUrl(fsys.linkage, pingLog, deadUrls, function (error, link) {
+          if (error) console.log(error);
+//          handle.downloadFile(fsys.directory, fsys.file, link);
         })
       })
     })
-/*
-    handle.configurePaths(linkages, function (filePath) {
-      if (fileName !== "") {
-        handle.buildDirectory(filePath, function() {
-          // Write the metadata ISO19139 XML
-          handle.writeXML(filePath, xml.fileId, xml.fullRecord);
-          // Write the referenced files
-          handle.downloadFile(filePath, fileName, linkage);
-        });
-      }
-    })
-*/
 	});
 }
 
