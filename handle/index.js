@@ -4,7 +4,8 @@ var http = require("http");
 var request = require("request");
 var path = require("path");
 var _ = require("underscore");
-
+var url = require("url");
+var archiver = require("archiver");
 
 module.exports = {
   // Write out XML data held in-memory to a text file.
@@ -90,7 +91,58 @@ module.exports = {
       }
     })
   },
-  compressDirectory: function (path, callback) {
+  // Given an array of linkages, parse them out, build some system paths and 
+  // pass the 'filePath' to the callback.
+  configurePaths: function (linkages, callback) {
+    _.each(linkages, function (linkage) {
+      var parsedUrl = url.parse(linkage);
+      // Remove any number of leading slashes (/)
+      var fileName = parsedUrl.path.replace(/^\/*/,"");
+      // Replace with an underscore anything that is not a-z, 
+      // 'A-Z, 0-9, _, . or -
+      fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+      var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+      var filePath = path.join(__dirname, "outputs", dirName);
 
+      callback(filePath);
+  },
+  // Given a path to a directory, compress the directory as a ZIP archive.
+  compressDirectory: function (directory, callback) {
+    var zipped = fs.createWriteStream(path.join(directory, ".zip"));
+    var archive = archiver("zip");
+
+    output.on("close", function () {
+      console.log("Directory has been archived");
+    });
+
+    archive.on("error", function (error) {
+      throw error;
+    });
+    
+    archive.pipe(zipped);
+    archive.bulk([
+      {expand: true, cwd: directory, src: ["**"], dest: zipped}
+    ]);
+    archive.finalize();
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

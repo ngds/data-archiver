@@ -13,6 +13,9 @@ var argv = require("yargs")
 
   .alias("p", "parse")
   .describe("Parse a CSW")
+
+  .alia("o", "out")
+  .describe("Specify a base directory for process outputs")
   .argv;
 
 var queue = [];
@@ -38,28 +41,45 @@ function constructRequest(startPosition, maxRecords) {
   }
 }
 
+function constructDirectories (callback) {
+  var base = argv.out == argv.out ? argv.out : __dirname;
+
+  var dirs = {
+    "base": base
+  };
+  var dirs["out"] = path.join(dirs["base"], "output");
+  var dirs["record"] = path.join(dirs["out"], "record");
+  var dirs["archive"] = path.join(dirs["out"], "archive");
+  var dirs["logs"] = path.join(dirs["out"], "logs");
+
+  function make (callback) {
+    for (var key in dirs) {
+      handle.buildDirectory(dirs[key]);
+    }
+    callback(dirs);
+  };
+
+  make(function (response) {
+    callback(response);
+  });
+}
+
 function parseCsw () {
+
   var parameters = constructRequest(1, 50);
   parse.parseCsw(parameters, function (xml) {
 		var linkages = xml.linkages;
-
-		_.each(linkages, function (linkage) {
-			var parsedUrl = url.parse(linkage);
-			var fileName = parsedUrl.path.replace(/^\/*/,"");   // Remove any number of leading slashes (/)
-			fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");  // Replace with an underscore anything that is not a-z, 'A-Z, 0-9, _, . or -
-			var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-			var filePath = path.join(__dirname, "outputs", dirName);
-
-			if (fileName != "") {
-				handle.buildDirectory(filePath, function() {
-					// Write the metadata ISO19139 XML
-				  handle.writeXML(filePath, xml.fileId, xml.fullRecord);
-					// Write the referenced files
-				  handle.downloadFile(filePath, fileName, linkage);
-				});
-			}
-		});
-  })
+    handle.configurePaths(linkages, function (filePath) {
+      if (fileName != "") {
+        handle.buildDirectory(filePath, function() {
+          // Write the metadata ISO19139 XML
+          handle.writeXML(filePath, xml.fileId, xml.fullRecord);
+          // Write the referenced files
+          handle.downloadFile(filePath, fileName, linkage);
+        });
+      }
+    })
+	});
 }
 
 
