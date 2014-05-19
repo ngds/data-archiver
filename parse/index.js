@@ -109,7 +109,6 @@ module.exports = {
     })
   },
   parseGetFeaturesWFS: function (url, callback) {
-    var cheerio = require("cheerio");
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
     var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
     var options = {
@@ -122,9 +121,20 @@ module.exports = {
     request(options).pipe(saxParser);
 
     feature.on("match", function (xml) {
-      var $ = cheerio.load(xml);
-      var log = $.getElementById("aasg:LogURI");
-      callback(log);
+      var logUri = xml.match("<aasg:LogURI>(.*?)</aasg:LogURI>")[1];
+      var wellUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>")[1];
+      var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>")[1];
+      var lasUrl = xml.match("<aasg:LASFileURL>(.*?)</aasg:LASFileURL>")[1];
+
+      if (typeof callback === "function") {
+        callback({
+          "logURI": logUri,
+          "wellBoreURI": wellUri,
+          "scannedFileURL": fileUrl,
+          "lasFileURL": lasUrl,
+          "xml": xml,
+        });
+      } 
     })
   }
 };
