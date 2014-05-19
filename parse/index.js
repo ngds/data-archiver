@@ -32,6 +32,10 @@ module.exports = {
       })
     }).end();
   },
+  // Given a CSW URL, stream out all of the data associated with the parent tag
+  // specified in the 'fullRecord' variable.  On each match, query some xpaths
+  // and return a UID and the linkage URLs.  Finally, stream the UID, linkage
+  // URLs and full XML match to the callback.
   parseCsw: function (parameters, callback) {
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
     var fullRecord = new saxpath.SaXPath(saxParser, "//gmd:MD_Metadata");
@@ -71,6 +75,10 @@ module.exports = {
       }
     });
   },
+  // Given an array of linkage URLs, pull out the WFS getCapabilities URLs and 
+  // ping them.  If URL returns 200, then pull out the getFeatures service 
+  // endpoint and the typeNames.  If the typeName matches 'aasg:WellLog', then 
+  // construct a getFeatures URL and pass it to the callback.
   parseGetCapabilitiesWFS: function (data, callback) {
     _.each(data.linkages, function (linkage) {
       if (linkage.search("service=WFS") != -1) {
@@ -108,6 +116,10 @@ module.exports = {
       }
     })
   },
+  // Given a WFS getFeatures URL, stream stream out all of the data associated 
+  // with the parent tag specified in the 'feature' variable.  On each match,
+  // hit the xml with some regular expressions for pulling out URIs and URLs and
+  // pass that data to the callback.
   parseGetFeaturesWFS: function (url, callback) {
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
     var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
