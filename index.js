@@ -5,6 +5,7 @@ var parse = require("./parse");
 var handle = require("./handle");
 var path = require("path");
 var url = require("url");
+var fs = require("fs");
 var _ = require("underscore");
   //archive = require("./archive");
 
@@ -52,25 +53,25 @@ function constructDirectories (callback) {
   var dirs["archive"] = path.join(dirs["out"], "archive");
   var dirs["logs"] = path.join(dirs["out"], "logs");
 
-  function make (callback) {
-    for (var key in dirs) {
-      handle.buildDirectory(dirs[key]);
+  for (var key in dirs) {
+    if (fs.existsSync(dirs[key])) {
+      console.log("Path exists: " + dirs[key]);
+    } else {
+      fs.mkdirSync(dirs[key]);
     }
-    callback(dirs);
   };
 
-  make(function (response) {
-    callback(response);
-  });
+  return dirs;
 }
 
 function parseCsw () {
-
   var parameters = constructRequest(1, 50);
+  var dirs = constructDirectories;
+
   parse.parseCsw(parameters, function (xml) {
 		var linkages = xml.linkages;
     handle.configurePaths(linkages, function (filePath) {
-      if (fileName != "") {
+      if (fileName !== "") {
         handle.buildDirectory(filePath, function() {
           // Write the metadata ISO19139 XML
           handle.writeXML(filePath, xml.fileId, xml.fullRecord);
