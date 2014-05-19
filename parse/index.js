@@ -5,6 +5,9 @@ var saxpath = require("saxpath");
 var _ = require("underscore");
 var xpath = require("xpath.js");
 var dom = require("xmldom").DOMParser;
+var url = require("url");
+var querystring = require("querystring");
+var fs = require("fs");
 
 module.exports = {
   scaleRequest: function (increment, parameters, callback) {
@@ -102,14 +105,13 @@ module.exports = {
               var typeNamePath = xpath(doc, "//wfs:FeatureTypeList/wfs:Featu" +
                                             "reType/wfs:Name");
               var endpoint = httpGetPath[0].value;
-              var typeName = typeNamePath[0].firstChild.data;
+              
+              var getFeatures = _.map(typeNamePath, function (typeName) {
+                return endpoint + "request=GetFeature&service=WFS&version=" +
+                       "2.0.0&typeNames=" + typeName.firstChild.data;
+              });
 
-              if (typeName === "aasg:WellLog") {
-                var getFeatures = endpoint + "request=GetFeature&service" +
-                                  "=WFS&version=2.0.0&typeNames=" + typeName;
-
-                callback(getFeatures);
-              }
+              callback(getFeatures);
             })
           }
         });
@@ -120,49 +122,50 @@ module.exports = {
   // with the parent tag specified in the 'feature' variable.  On each match,
   // hit the xml with some regular expressions for pulling out URIs and URLs and
   // pass that data to the callback.
-  parseGetFeaturesWFS: function (url, callback) {
-    var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
-    var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
-    var options = {
-      "url": url,
-      "headers": {
-      "Content-type": "text/xml;charset=utf-8",
-      }      
-    };
+  parseGetFeaturesWFS: function (directory, urls) {
+    _.each(urls, function (link) {
+      var urlQuery = url.parse(link)["query"];
+      var typeName = querystring.parse(urlQuery)["typeNames"];
+      
+      var options = {
+        "url": link,
+        "headers": {
+        "Content-type": "text/xml;charset=utf-8",
+        }      
+      };
 
-    request(options).pipe(saxParser);
-
-    feature.on("match", function (xml) {
-      var logUri = xml.match("<aasg:LogURI>(.*?)</aasg:LogURI>")[1];
-      var wellUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>")[1];
-      var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>")[1];
-      var lasUrl = xml.match("<aasg:LASFileURL>(.*?)</aasg:LASFileURL>")[1];
-
-      if (typeof callback === "function") {
-        callback({
-          "logURI": logUri,
-          "wellBoreURI": wellUri,
-          "scannedFileURL": fileUrl,
-          "lasFileURL": lasUrl,
-          "xml": xml,
+      if (typeName === "aasg:WellLog") {
+        var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
+        var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
+        
+        saxParser.on("error", function (error) {
+          callback({
+            "link": link,
+            "error": error,
+          });
         });
+
+        request(options).pipe(saxParser);
+
+        feature.on("match", function (xml) {
+          var logUri = xml.match("<aasg:LogURI>(.*?)</aasg:LogURI>")[1];
+          var wellUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>")[1];
+          var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>")[1];
+          var lasUrl = xml.match("<aasg:LASFileURL>(.*?)</aasg:LASFileURL>")[1];
+
+          callback({
+            "logURI": logUri,
+            "wellBoreURI": wellUri,
+            "scannedFileURL": fileUrl,
+            "lasFileURL": lasUrl,
+            "xml": xml,
+          });
+        })
       } 
+      else {
+
+        request(options).pipe(fs.createWriteStream(outputXML));
+      }
     })
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

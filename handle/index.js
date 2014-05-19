@@ -9,14 +9,12 @@ var archiver = require("archiver");
 
 module.exports = {
   // Write out XML data held in-memory to a text file.
-  writeXML: function (filePath, fileId, data) { 
-    var outputPath = path.join(filePath, fileId + ".xml");
-
-    fs.writeFile(outputPath, data, function (err) {
-      if (err) {
-        console.log(err);
+  writeXML: function (outputXml, data) { 
+    fs.writeFile(outputXml, data, function (error) {
+      if (error) {
+        console.log(error);
       } else {
-        console.log("File saved: " + outputPath);
+        console.log("File saved: " + outputXml);
       }
     });     
   },
@@ -50,7 +48,7 @@ module.exports = {
   // Given an FTP or HTTP URL, ping it to see if the URL is alive.  If it is, 
   // continue with business as usual.  If not, then write out the URL to a dead
   // links file.
-  pingUrl: function (linkage, outputFile, callback) {
+  pingUrl: function (linkage, masterLog, deadLog, callback) {
     // Ping FTP links
     if (linkage.indexOf("ftp") === 0) {
       ftp.head(linkage, function (error, size) {
@@ -93,7 +91,7 @@ module.exports = {
   },
   // Given an array of linkages, parse them out, build some system paths and 
   // pass the 'filePath' to the callback.
-  configurePaths: function (linkages, callback) {
+  configurePaths: function (directory, linkages, callback) {
     _.each(linkages, function (linkage) {
       var parsedUrl = url.parse(linkage);
       // Remove any number of leading slashes (/)
@@ -102,9 +100,14 @@ module.exports = {
       // 'A-Z, 0-9, _, . or -
       fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
       var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-      var filePath = path.join(__dirname, "outputs", dirName);
+      var filePath = path.join(directory, dirName);
 
-      callback(filePath);
+      callback({
+        "file": fileName,
+        "directory": filePath,
+        "linkage": linkage,
+      });
+    })
   },
   // Given a path to a directory, compress the directory as a ZIP archive.
   compressDirectory: function (directory, callback) {
@@ -118,7 +121,7 @@ module.exports = {
     archive.on("error", function (error) {
       throw error;
     });
-    
+
     archive.pipe(zipped);
     archive.bulk([
       {expand: true, cwd: directory, src: ["**"], dest: zipped}
@@ -126,23 +129,3 @@ module.exports = {
     archive.finalize();
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

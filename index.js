@@ -15,7 +15,7 @@ var argv = require("yargs")
   .alias("p", "parse")
   .describe("Parse a CSW")
 
-  .alia("o", "out")
+  .alias("o", "out")
   .describe("Specify a base directory for process outputs")
   .argv;
 
@@ -43,15 +43,15 @@ function constructRequest(startPosition, maxRecords) {
 }
 
 function constructDirectories (callback) {
-  var base = argv.out == argv.out ? argv.out : __dirname;
+  var base = argv.out 
+      ? argv.out 
+      : path.dirname(require.main.filename);
 
-  var dirs = {
-    "base": base
-  };
-  var dirs["out"] = path.join(dirs["base"], "output");
-  var dirs["record"] = path.join(dirs["out"], "record");
-  var dirs["archive"] = path.join(dirs["out"], "archive");
-  var dirs["logs"] = path.join(dirs["out"], "logs");
+  var dirs = {};
+  dirs["out"] = path.join(base, "outputs");
+  dirs["record"] = path.join(dirs["out"], "records");
+  dirs["archive"] = path.join(dirs["out"], "archive");
+  dirs["logs"] = path.join(dirs["out"], "logs");
 
   for (var key in dirs) {
     if (fs.existsSync(dirs[key])) {
@@ -60,16 +60,28 @@ function constructDirectories (callback) {
       fs.mkdirSync(dirs[key]);
     }
   };
-
   return dirs;
 }
 
 function parseCsw () {
-  var parameters = constructRequest(1, 50);
-  var dirs = constructDirectories;
+  var parameters = constructRequest(1, 1000);
+  var dirs = constructDirectories();
 
   parse.parseCsw(parameters, function (xml) {
-		var linkages = xml.linkages;
+    var directory = path.join(dirs["records"], xml.fileId);
+    handle.buildDirectory(directory, function () {
+      var outputXml = path.join(directory, fileId, ".xml");
+      handle.writeXML(outputXml, xml.fullRecord);
+
+      var pingLog = path.join(dirs["logs"], "linkage-status.csv");
+      var deadUrls = path.join(dirs["logs"], "dead-linkages.csv");
+      handle.configurePaths(directory, xml.linkages, function (fsys) {
+        handle.pingUrl(fsys.linkage, pingLog, deadUrls, function (status) {
+          
+        })
+      })
+    })
+/*
     handle.configurePaths(linkages, function (filePath) {
       if (fileName !== "") {
         handle.buildDirectory(filePath, function() {
@@ -80,6 +92,7 @@ function parseCsw () {
         });
       }
     })
+*/
 	});
 }
 
