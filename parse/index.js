@@ -54,21 +54,16 @@ module.exports = {
     request(options).pipe(saxParser);
 
     fullRecord.on("match", function (xml) {
-      var doc = new dom().parseFromString(xml);
-      var fileIdPath = xpath(doc, "//gmd:fileIdentifier/gco:CharacterString");
-      var linkagePath = xpath(doc, "//gmd:distributionInfo/gmd:MD_Distributi" + 
-                                   "on/gmd:transferOptions/gmd:MD_DigitalTra" +
-                                   "nsferOptions/gmd:onLine/gmd:CI_OnlineRes" + 
-                                   "ource/gmd:linkage/gmd:URL");
-
-      var fileId = fileIdPath[0].firstChild.data;
+      var idReg = new RegExp(/<gmd:fileIdentifier><gco:CharacterString>(.*?)<\/gco:CharacterString><\/gmd:fileIdentifier>/g);
+      var urlReg = new RegExp(/<gmd:URL>(.*?)<\/gmd:URL>/g);
       
-      fileId.replace(/\n$/, "");
+      var fileId = idReg.exec(xml)[1];
+      var linkages = [];
+      var match;
 
-      var linkages = _.map(linkagePath, function (linkage) {
-        var child = linkage.firstChild;
-        if (child.data !== null) return child.data;
-      });
+      while (match = urlReg.exec(xml)) {
+        linkages.push(match[1]);
+      };
 
       if (typeof callback === "function") {
         callback({

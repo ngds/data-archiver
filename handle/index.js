@@ -19,7 +19,8 @@ module.exports = {
     });     
   },
   writeLinkage: function (logFile, linkage) {
-    var text = linkage + ",\n";
+    var date = new Date().toISOString();
+    var text = linkage + "," + date + ",\n";
     fs.appendFile(logFile, text, function (error) {
       if (error) throw error;
     })
@@ -55,6 +56,7 @@ module.exports = {
   // continue with business as usual.  If not, then write out the URL to a dead
   // links file.
   pingUrl: function (linkage, masterLog, deadLog, callback) {
+    var date = new Date().toISOString();
     function writeLog (logfile, text) {
       fs.appendFile(logfile, text, function (error) {
         if (error) throw error;
@@ -64,12 +66,12 @@ module.exports = {
     if (linkage.indexOf("ftp") === 0) {
       ftp.head(linkage, function (error) {
         if (error) {
-          var status = "DEAD," + linkage + "\n";
+          var status = "DEAD," + linkage + "," + date + ",\n";
           writeLog(masterLog, status);
-          writeLog(deadLog, linkage + "\n");
+          writeLog(deadLog, linkage + "," + date + ",\n");
           callback(new Error("Dead FTP: " + linkage));
         } else {
-          var status = "ALIVE," + linkage + "\n";
+          var status = "ALIVE," + linkage + "," + date + ",\n";
           writeLog(masterLog, status);
           callback(null, linkage);
         }
@@ -79,18 +81,20 @@ module.exports = {
     else if (linkage.indexOf("http") === 0) {
       request(linkage, function (error, response) {
         if (!error && response.statusCode === 200) {
-          var status = "ALIVE," + linkage + "\n";
+          var status = "ALIVE," + linkage + "," + date + ",\n";;
           writeLog(masterLog, status);
           callback(null, linkage);
         } else {
-          var status = "DEAD," + linkage + "\n";
+          var status = "DEAD," + linkage + "," + date + ",\n";;
           writeLog(masterLog, status);
-          writeLog(deadLog, linkage + "\n");
+          writeLog(deadLog, linkage + "," + date + ",\n");
           callback(new Error("Dead HTTP: " + linkage));
         }
       })
     }
     else {
+      writeLog(masterLog, "INVALID," + linkage + "," + date + ",\n");
+      writeLog(deadLog, linkage + "," + date + ",\n");
       callback(new Error("Invalid URL: " + linkage));
     }
   },

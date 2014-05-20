@@ -40,7 +40,6 @@ function constructRequests () {
   utility.doRequest(33875, 100, function (d) {
     var base = "http://geothermaldata.org/csw?";
     utility.buildUrl(base, d.counter, d.increment, function (getRecords) {
-      console.log(getRecords);
       parseLinkageHosts(getRecords, unique, dirs);      
     });
   })
