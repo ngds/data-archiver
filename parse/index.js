@@ -66,7 +66,8 @@ module.exports = {
       fileId.replace(/\n$/, "");
 
       var linkages = _.map(linkagePath, function (linkage) {
-        return linkage.firstChild.data;
+        var child = linkage.firstChild;
+        if (child.data !== null) return child.data;
       });
 
       if (typeof callback === "function") {
@@ -93,6 +94,7 @@ module.exports = {
         "Content-type": "text/xml;charset=utf-8",
         }      
       };
+
       request(linkage, function (error, response) {
         if (!error && response.statusCode == 200) {
           request(options).pipe(saxParser);
