@@ -18,6 +18,12 @@ module.exports = {
       }
     });     
   },
+  writeLinkage: function (logFile, linkage) {
+    var text = linkage + ",\n";
+    fs.appendFile(logFile, text, function (error) {
+      if (error) throw error;
+    })
+  },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
   downloadFile: function (directory, file, linkage) {
@@ -142,3 +148,11 @@ module.exports = {
     archive.finalize();
   }
 };
+
+
+
+
+
+
+
+

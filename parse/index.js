@@ -10,7 +10,7 @@ var querystring = require("querystring");
 var fs = require("fs");
 
 module.exports = {
-  scaleRequest: function (increment, parameters, callback) {
+  scaleRequest: function (parameters, increment, callback) {
     var counter = 0,
       total;
 
@@ -161,7 +161,6 @@ module.exports = {
         })
       } 
       else {
-
         request(options).pipe(fs.createWriteStream(outputXML));
       }
     })
