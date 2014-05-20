@@ -5,6 +5,7 @@ var parse = require("./parse");
 var handle = require("./handle");
 var path = require("path");
 var url = require("url");
+var fs = require("fs");
 var _ = require("underscore");
   //archive = require("./archive");
 
@@ -13,6 +14,9 @@ var argv = require("yargs")
 
   .alias("p", "parse")
   .describe("Parse a CSW")
+
+  .alias("o", "out")
+  .describe("Specify a base directory for process outputs")
   .argv;
 
 var queue = [];
@@ -38,28 +42,55 @@ function constructRequest(startPosition, maxRecords) {
   }
 }
 
-function parseCsw () {
-  var parameters = constructRequest(1, 50);
-  parse.parseCsw(parameters, function (xml) {
-		var linkages = xml.linkages;
+function constructDirectories (callback) {
+  var base = argv.out 
+      ? argv.out 
+      : path.dirname(require.main.filename);
 
-			_.each(linkages, function (linkage) {
-				//handle.pingUrl(linkage);
-				
-				var parsedUrl = url.parse(linkage);
-				var fileName = parsedUrl.path.replace(/^\/*/,"");   // Remove any number of leading slashes (/)
-				fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");  // Replace with an underscore anything that is not a-z, 'A-Z, 0-9, _, . or -
-				var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-				var filePath = path.join(__dirname, "outputs", dirName);
-				
-				if (fileName != "") {
-					handle.buildDirectory(filePath, function() {
-						// Write the metadata ISO19139 XML
-						handle.writeXML(filePath, xml.fileId, xml.fullRecord);
-						// Write the referenced files
-						handle.downloadFile(filePath, fileName, linkage);
-					});
-				}
-			});
-  })
+  var dirs = {};
+  dirs["out"] = path.join(base, "outputs");
+  dirs["record"] = path.join(dirs["out"], "records");
+  dirs["archive"] = path.join(dirs["out"], "archive");
+  dirs["logs"] = path.join(dirs["out"], "logs");
+
+  for (var key in dirs) {
+    if (fs.existsSync(dirs[key])) {
+      console.log("Path exists: " + dirs[key]);
+    } else {
+      fs.mkdirSync(dirs[key]);
+    }
+  };
+  return dirs;
 }
+
+function parseCsw () {
+  var parameters = constructRequest(1, 1000);
+  var dirs = constructDirectories();
+
+  parse.parseCsw(parameters, function (xml) {
+    var directory = path.join(dirs["record"], xml.fileId);
+    handle.buildDirectory(directory, function () {
+      var outputXml = path.join(directory, xml.fileId + ".xml");
+      handle.writeXML(outputXml, xml.fullRecord);
+      var pingLog = path.join(dirs["logs"], "linkage-status.csv");
+      var deadUrls = path.join(dirs["logs"], "dead-linkages.csv");
+      handle.configurePaths(directory, xml.linkages, function (fsys) {
+        handle.pingUrl(fsys.linkage, pingLog, deadUrls, function (error, link) {
+          if (error) console.log(error);
+//          handle.downloadFile(fsys.directory, fsys.file, link);
+        })
+      })
+    })
+	});
+}
+
+
+
+
+
+
+
+
+
+
+
