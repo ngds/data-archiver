@@ -23,11 +23,107 @@ var argv = require("yargs")
   .describe("Specify a base directory for process outputs")
   .argv;
 
-var queue = [];
-if (argv.parse) queue.push(parseCsw);
-if (argv.urls) queue.push(pingLinkages);
+var cmdQueue = [];
+if (argv.parse) cmdQueue.push(parseCsw);
+if (argv.urls) cmdQueue.push(doEverything);
 
-async.series(queue);
+async.series(cmdQueue);
+
+function taskFirst (dirs, xml, callback) {
+  var directory = path.join(dirs["record"], xml.fileId);
+  handle.buildDirectory(directory, function () {
+    var outXML = path.join(directory, xml.fileId + ".xml");
+    handle.writeXML(outXML, xml.fullRecord);
+  })
+  callback();
+};
+
+function taskSecond (glob, dirs, xml, callback) {
+  var pingLog = path.join(dirs["logs"], "linkage-status.csv");
+  var deadLog = path.join(dirs["logs"], "dead-linkages.csv");
+  var uniqueLog = path.join(dirs["logs"], "unique-linkages.csv");
+
+  async.each(xml.linkages, function (linkage) {
+    var parsedUrl = url.parse(linkage);
+    var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
+    if (_.indexOf(glob["unique"], host) === -1) {
+      handle.linkageLogger(host, uniqueLog);
+      glob["unique"].push(host);  
+
+      handle.pingUrl(host, function (error, response) {
+        if (error) {
+          error["ping"] = "DEAD";
+          handle.linkageLogger(error, deadLog);
+          handle.linkageLogger(error, pingLog);
+          glob["dead"].push(error);
+          glob["status"].push(error);
+        };
+
+        if (response) {
+          response["ping"] = "ALIVE";
+          handle.linkageLogger(response, pingLog);
+          glob["status"].push(response);
+        };
+      })
+    }
+  });
+}
+
+function taskThird (glob, dirs, xml, callback) {
+
+}
+
+/*
+    _.each(xml.linkages, function (linkage) {
+      if (linkage !== "" && linkage.indexOf(":") !== -1) {
+        handle.configurePaths(directory, linkage, function (res) {
+          if (res.directory && res.file && res.linkage) {
+            handle.downloadFile(res.directory, res.file, res.linkage);            
+          }
+        })
+      }
+    })
+*/
+
+function doEverything () {
+  var DataStore = function () {
+    var linkages = {};
+    linkages.unique = [];
+    linkages.status = [];
+    linkages.dead = [];
+
+    return linkages;
+  };
+
+  var ds = new DataStore();
+  
+  var base = argv.out 
+      ? argv.out 
+      : path.dirname(require.main.filename);
+
+  var dirs = utility.buildDirs(base);
+
+  utility.doRequest(2, 2, function (data) {
+    var base = "http://geothermaldata.org/csw?";
+    utility.buildUrl(base, data.counter, data.increment, function (getRecords) {
+
+      parse.parseCsw(getRecords, function (xml) {
+        async.series([
+/*
+          function (callback) {
+            taskFirst(dirs, xml, callback);
+          },
+*/
+          function (callback) {
+            taskSecond(ds, dirs, xml, callback);
+          }
+        ], function (error, result) {
+          if (error) console.log(error);
+        })
+      })
+    })
+  })
+}
 
 function pingLinkages () {
   var base = argv.out 
@@ -52,62 +148,6 @@ function pingLinkages () {
     })
   });
 }
-
-function specialDelivery (directory, xml, pingLog, linkageLog, deadUrls) {
-  var unique = [];
-  
-  handle.buildDirectory(directory, function () {
-    var outXML = path.join(directory, xml.fileId + ".xml");
-    handle.writeXML(outXML, xml.fullRecord);
-
-    _.each(xml.linkages, function (linkage) {
-      var host = url.parse(linkage)["protocol"] + "//" 
-                 + url.parse(linkage)["host"];
-      if (_.indexOf(unique, host) === -1) {
-        unique.push(host);
-        handle.writeLinkage(linkageLog, host);
-        handle.pingUrl(host, pingLog, deadUrls, function (err, link) {
-
-        })
-      }
-    })
-
-    _.each(xml.linkages, function (linkage) {
-      if (linkage !== "" && linkage.indexOf(":") !== -1) {
-        handle.configurePaths(directory, linkage, function (res) {
-          if (res.directory && res.file && res.linkage) {
-            handle.downloadFile(res.directory, res.file, res.linkage);            
-          }
-        })
-      }
-    })
-  })
-}
-
-
-
-function parseCsw () {
-  var parameters = constructRequest(1, 1000);
-  var dirs = constructDirectories();
-
-  parse.parseCsw(parameters, function (xml) {
-    var directory = path.join(dirs["record"], xml.fileId);
-    handle.buildDirectory(directory, function () {
-      var outputXml = path.join(directory, xml.fileId + ".xml");
-      handle.writeXML(outputXml, xml.fullRecord);
-      var pingLog = path.join(dirs["logs"], "linkage-status.csv");
-      var deadUrls = path.join(dirs["logs"], "dead-linkages.csv");
-      handle.configurePaths(directory, xml.linkages, function (fsys) {
-        handle.pingUrl(fsys.linkage, pingLog, deadUrls, function (error, link) {
-          if (error) console.log(error);
-//          handle.downloadFile(fsys.directory, fsys.file, link);
-        })
-      })
-    })
-	});
-}
-
-
 
 
 

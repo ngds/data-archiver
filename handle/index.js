@@ -26,6 +26,9 @@ module.exports = {
       if (error) throw error;
     })
   },
+  linkageLogger: function (data, log, callback) {
+    callback(data);
+  },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
   downloadFile: function (directory, file, linkage) {
@@ -73,25 +76,20 @@ module.exports = {
   // Given an FTP or HTTP URL, ping it to see if the URL is alive.  If it is, 
   // continue with business as usual.  If not, then write out the URL to a dead
   // links file.
-  pingUrl: function (linkage, masterLog, deadLog, callback) {
-    var date = new Date().toISOString();
-    function writeLog (logfile, text) {
-      fs.appendFile(logfile, text, function (error) {
-        if (error) throw error;
-      })
-    };
+  pingUrl: function (linkage, callback) {
+    var PingError = function (messages) {
+      this.messages = messages;
+      return this.messages;
+    }
+
+    var time = new Date().toISOString();
     // Ping FTP links
     if (linkage.indexOf("ftp") === 0) {
       ftp.head(linkage, function (error) {
         if (error) {
-          var status = "DEAD," + linkage + "," + date + ",\n";
-          writeLog(masterLog, status);
-          writeLog(deadLog, linkage + "," + date + ",\n");
-          callback(new Error("Dead FTP: " + linkage));
+          callback(new PingError({"linkage": linkage, "time": time}));
         } else {
-          var status = "ALIVE," + linkage + "," + date + ",\n";
-          writeLog(masterLog, status);
-          callback(null, linkage);
+          callback(null, {"linkage": linkage, "time": time});
         }
       });
     }
@@ -99,21 +97,14 @@ module.exports = {
     else if (linkage.indexOf("http") === 0) {
       request(linkage, function (error, response) {
         if (!error && response.statusCode === 200) {
-          var status = "ALIVE," + linkage + "," + date + ",\n";;
-          writeLog(masterLog, status);
-          callback(null, linkage);
+          callback(null, {"linkage": linkage, "time": time});
         } else {
-          var status = "DEAD," + linkage + "," + date + ",\n";;
-          writeLog(masterLog, status);
-          writeLog(deadLog, linkage + "," + date + ",\n");
-          callback(new Error("Dead HTTP: " + linkage));
+          callback(new PingError({"linkage": linkage, "time": time}));
         }
       })
     }
     else {
-      writeLog(masterLog, "INVALID," + linkage + "," + date + ",\n");
-      writeLog(deadLog, linkage + "," + date + ",\n");
-      callback(new Error("Invalid URL: " + linkage));
+      callback(new PingError({"linkage": linkage, "time": time}));
     }
   },
   // Function for building directories, and nothing more.
