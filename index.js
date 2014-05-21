@@ -25,44 +25,66 @@ var argv = require("yargs")
 
 var queue = [];
 if (argv.parse) queue.push(parseCsw);
-if (argv.urls) queue.push(constructRequests);
+if (argv.urls) queue.push(pingLinkages);
 
 async.series(queue);
 
-function constructRequests () {
+function pingLinkages () {
   var base = argv.out 
       ? argv.out 
       : path.dirname(require.main.filename);
 
   var dirs = utility.buildDirs(base);
-  var unique = [];
   
-  utility.doRequest(33875, 100, function (d) {
+  utility.doRequest(1000, 100, function (d) {
     var base = "http://geothermaldata.org/csw?";
     utility.buildUrl(base, d.counter, d.increment, function (getRecords) {
-      parseLinkageHosts(getRecords, unique, dirs);      
-    });
-  })
+      parse.parseCsw(getRecords, function (xml) {
+        var pingLog = path.join(dirs["logs"], "linkage-status.csv");
+        var deadUrls = path.join(dirs["logs"], "dead-linkages.csv");
+        var linkageLog = path.join(dirs["logs"], "unique-linkages.csv");
+        
+        var directory = path.join(dirs["record"], xml.fileId);
+
+        specialDelivery(directory, xml, pingLog, linkageLog, deadUrls);
+
+      })
+    })
+  });
 }
 
-function parseLinkageHosts (parameters, unique, dirs) {
-  parse.parseCsw(parameters, function (xml) {
-    var pingLog = path.join(dirs["logs"], "linkage-status.csv");
-    var deadUrls = path.join(dirs["logs"], "dead-linkages.csv");
-    var linkageLog = path.join(dirs["logs"], "unique-linkages.csv");
+function specialDelivery (directory, xml, pingLog, linkageLog, deadUrls) {
+  var unique = [];
+  
+  handle.buildDirectory(directory, function () {
+    var outXML = path.join(directory, xml.fileId + ".xml");
+    handle.writeXML(outXML, xml.fullRecord);
+
     _.each(xml.linkages, function (linkage) {
-      var host = url.parse(linkage)["protocol"] + "//" + url.parse(linkage)["host"];
+      var host = url.parse(linkage)["protocol"] + "//" 
+                 + url.parse(linkage)["host"];
       if (_.indexOf(unique, host) === -1) {
         unique.push(host);
         handle.writeLinkage(linkageLog, host);
-        handle.pingUrl(host, pingLog, deadUrls, function (error, link) {
-          if (error) console.log(error);
-          if (link) console.log(link);
+        handle.pingUrl(host, pingLog, deadUrls, function (err, link) {
+
+        })
+      }
+    })
+
+    _.each(xml.linkages, function (linkage) {
+      if (linkage !== "" && linkage.indexOf(":") !== -1) {
+        handle.configurePaths(directory, linkage, function (res) {
+          if (res.directory && res.file && res.linkage) {
+            handle.downloadFile(res.directory, res.file, res.linkage);            
+          }
         })
       }
     })
   })
 }
+
+
 
 function parseCsw () {
   var parameters = constructRequest(1, 1000);
