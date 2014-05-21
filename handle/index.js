@@ -14,8 +14,6 @@ module.exports = {
     fs.writeFile(outputXml, data, function (error) {
       if (error) {
         console.log(error);
-      } else {
-        console.log("File saved: " + outputXml);
       }
     });     
   },
@@ -47,7 +45,6 @@ module.exports = {
           if (linkage.indexOf("ftp") === 0) {
             ftp.get(linkage, outputPath, function (err, res) {
               if (err) return console.log(err, res);
-              else return console.log("File saved: " + outputPath);
             })
           } 
           // Write HTTP files to local outputs folder
@@ -58,7 +55,6 @@ module.exports = {
               var request = http.get(url, function (response) {
                 response.pipe(file);
                 file.on("finish", function () {
-                  console.log("File saved: " + destination);
                   file.close(cb);
                 })
               })
@@ -72,7 +68,6 @@ module.exports = {
               var request = https.get(url, function (response) {
                 response.pipe(file);
                 file.on("finish", function () {
-                  console.log("File saved: " + destination);
                   file.close(cb);
                 })
               })
@@ -135,22 +130,24 @@ module.exports = {
   // Given an array of linkages, parse them out, build some system paths and 
   // pass the 'filePath' to the callback.
   configurePaths: function (directory, linkage, callback) {
-    var parsedUrl = url.parse(linkage);
+    if (linkage) {
+      var parsedUrl = url.parse(linkage);
 
-    if (parsedUrl["hostname"] !== null) {
       // Remove any number of leading slashes (/)
       var fileName = parsedUrl.path.replace(/^\/*/,"");
-      // Replace with an underscore anything that is not a-z, 
-      // 'A-Z, 0-9, _, . or -
-      fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-      var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-      var filePath = path.join(directory, dirName);
+      if (parsedUrl["hostname"] !== null && fileName.length > 0) {
+        // Replace with an underscore anything that is not a-z, 
+        // 'A-Z, 0-9, _, . or -
+        fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+        var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+        var filePath = path.join(directory, dirName);
 
-      callback({
-        "file": fileName,
-        "directory": filePath,
-        "linkage": linkage,
-      });      
+        callback({
+          "file": fileName,
+          "directory": filePath,
+          "linkage": linkage,
+        });      
+      }      
     }
   },
   // Given a path to a directory, compress the directory as a ZIP archive.
