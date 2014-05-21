@@ -27,50 +27,60 @@ module.exports = {
     })
   },
   linkageLogger: function (data, log, callback) {
-    callback(data);
+    console.log(data);
+    callback();
   },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
   downloadFile: function (directory, file, linkage) {
-    this.buildDirectory(directory, function () {
-      var outputPath = path.join(directory, file);
-          
-      // Write FTP files to local outputs folder
-      if (linkage.indexOf("ftp") === 0) {
-        ftp.get(linkage, outputPath, function (err, res) {
-          if (err) return console.log(err, res);
-          else return console.log("File saved: " + outputPath);
-        })
-      } 
-      // Write HTTP files to local outputs folder
-      else if (linkage.indexOf("http") === 0 && 
-               linkage.indexOf("https") === -1) {
-        var download = function (url, destination, cb) {
-          var file = fs.createWriteStream(destination);
-          var request = http.get(url, function (response) {
-            response.pipe(file);
-            file.on("finish", function () {
-              console.log("File saved: " + destination);
-              file.close(cb);
+    var directory = directory.replace(/(\r\n|\n|\r)/gm,"");
+    var file = file.replace(/(\r\n|\n|\r)/gm,"");
+
+    this.buildDirectory(directory, function (error) {
+
+      fs.exists(directory, function (exists) {
+        if (exists) {
+
+          var outputPath = path.join(directory, file);
+              
+          // Write FTP files to local outputs folder
+          if (linkage.indexOf("ftp") === 0) {
+            ftp.get(linkage, outputPath, function (err, res) {
+              if (err) return console.log(err, res);
+              else return console.log("File saved: " + outputPath);
             })
-          })
+          } 
+          // Write HTTP files to local outputs folder
+          else if (linkage.indexOf("http") === 0 && 
+                   linkage.indexOf("https") === -1) {
+            var download = function (url, destination, cb) {
+              var file = fs.createWriteStream(destination);
+              var request = http.get(url, function (response) {
+                response.pipe(file);
+                file.on("finish", function () {
+                  console.log("File saved: " + destination);
+                  file.close(cb);
+                })
+              })
+            }
+            download(linkage, outputPath);
+          } 
+          // Write HTTPS files to local outputs folder
+          else if (linkage.indexOf("https") === 0) {
+            var download = function (url, destination, cb) {
+              var file = fs.createWriteStream(destination);
+              var request = https.get(url, function (response) {
+                response.pipe(file);
+                file.on("finish", function () {
+                  console.log("File saved: " + destination);
+                  file.close(cb);
+                })
+              })
+            }
+            download(linkage, outputPath);
+          }
         }
-        download(linkage, outputPath);
-      } 
-      // Write HTTPS files to local outputs folder
-      else if (linkage.indexOf("https") === 0) {
-        var download = function (url, destination, cb) {
-          var file = fs.createWriteStream(destination);
-          var request = https.get(url, function (response) {
-            response.pipe(file);
-            file.on("finish", function () {
-              console.log("File saved: " + destination);
-              file.close(cb);
-            })
-          })
-        }
-        download(linkage, outputPath);
-      }
+      })
     })
   },
   // Given an FTP or HTTP URL, ping it to see if the URL is alive.  If it is, 
@@ -111,11 +121,12 @@ module.exports = {
   buildDirectory: function (path, callback) {
     fs.exists(path, function (exists) {
       if (exists) {
-        //console.log(path + " already exists");
         callback();
       } else {
-        fs.mkdir(path, function () {
-          //console.log("Created: " + path);
+        fs.mkdir(path, function (error) {
+          if (error) {
+            callback(error);
+          }
           callback();
         })
       }
@@ -125,19 +136,22 @@ module.exports = {
   // pass the 'filePath' to the callback.
   configurePaths: function (directory, linkage, callback) {
     var parsedUrl = url.parse(linkage);
-    // Remove any number of leading slashes (/)
-    var fileName = parsedUrl.path.replace(/^\/*/,"");
-    // Replace with an underscore anything that is not a-z, 
-    // 'A-Z, 0-9, _, . or -
-    fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-    var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-    var filePath = path.join(directory, dirName);
 
-    callback({
-      "file": fileName,
-      "directory": filePath,
-      "linkage": linkage,
-    });
+    if (parsedUrl["hostname"] !== null) {
+      // Remove any number of leading slashes (/)
+      var fileName = parsedUrl.path.replace(/^\/*/,"");
+      // Replace with an underscore anything that is not a-z, 
+      // 'A-Z, 0-9, _, . or -
+      fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+      var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+      var filePath = path.join(directory, dirName);
+
+      callback({
+        "file": fileName,
+        "directory": filePath,
+        "linkage": linkage,
+      });      
+    }
   },
   // Given a path to a directory, compress the directory as a ZIP archive.
   compressDirectory: function (directory, callback) {
