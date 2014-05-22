@@ -162,11 +162,13 @@ module.exports = {
     }
   },
   // Given a path to a directory, compress the directory as a ZIP archive.
-  compressDirectory: function (directory, callback) {
-    var zipped = fs.createWriteStream(path.join(directory, ".zip"));
+  compressDirectory: function (uncompressed, compressed, callback) {
+    console.log(uncompressed);
+    console.log(compressed);
+    var zipped = fs.createWriteStream(compressed);
     var archive = archiver("zip");
 
-    output.on("close", function () {
+    zipped.on("close", function () {
       console.log("Directory has been archived");
     });
 
@@ -176,7 +178,7 @@ module.exports = {
 
     archive.pipe(zipped);
     archive.bulk([
-      {expand: true, cwd: directory, src: ["**"], dest: zipped}
+      {expand: true, cwd: uncompressed, src: ["**"]}
     ]);
     archive.finalize();
   }

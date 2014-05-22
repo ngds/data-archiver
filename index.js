@@ -77,7 +77,15 @@ function taskThird (glob, dirs, xml, callback) {
       parse.parseOGC(directory, linkage);
     } 
   });
-  callback(null);
+  callback(null, dirs, xml.fileId);
+}
+
+function taskFourth (dirs, directory, callback) {
+  var uncompressed = path.join(dirs["record"], directory);
+  var compressed = path.join(dirs["archive"], directory + ".zip");
+  handle.compressDirectory(uncompressed, compressed, function (response) {
+
+  })
 }
 
 function taskFifth (glob, dirs, xml, callback) {
@@ -129,7 +137,7 @@ function doEverything () {
     utility.buildUrl(base, data.counter, data.increment, function (getRecords) {
       parse.parseCsw(getRecords, function (xml) {
 
-        async.series([
+        async.waterfall([
           function (callback) {
             taskFirst(dirs, xml, callback);
           },
@@ -139,6 +147,9 @@ function doEverything () {
           function (callback) {
             taskThird(ds, dirs, xml, callback)
           },
+          function (dirs, directory, callback) {
+            taskFourth(dirs, directory, callback)
+          }
         ], function (error, result) {
           if (error) console.log(error);
         })

@@ -173,14 +173,16 @@ module.exports = {
       })
     } 
     else {
-      var outputXML = path.join(directory, file + ".xml");
-      console.log(outputXML);
-      request(options)
-        .on("response", function () {})
-        .on("error", function () {
-          console.log("ERROR")
-        })
-        .pipe(fs.createWriteStream(outputXML));
+      fs.exists(directory, function (exists) {
+        var outputXML = path.join(directory, file + ".xml");
+        console.log(outputXML);
+        request(options)
+          .on("response", function () {})
+          .on("error", function () {
+            console.log("ERROR")
+          })
+          .pipe(fs.createWriteStream(outputXML));        
+      })
     }
   },
   parseOGC: function (directory, linkage) {
