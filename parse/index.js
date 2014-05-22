@@ -123,14 +123,6 @@ module.exports = {
   // hit the xml with some regular expressions for pulling out URIs and URLs and
   // pass that data to the callback.
   parseGetFeaturesWFS: function (directory, file, linkage) {
-    function text (value) {
-      if (value != null) {
-        return value;
-      } else {
-        return "undefined";
-      }
-    }
-
     var urlQuery = url.parse(linkage)["query"];
     var typeName = querystring.parse(urlQuery)["typeNames"];
       
@@ -155,21 +147,38 @@ module.exports = {
       request(options).pipe(saxParser);
 
       feature.on("match", function (xml) {
-        var logUri = text(xml.match("<aasg:LogURI>(.*?)</aasg:LogURI>")[1]);
-        var wellUri = text(xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>")[1]);
-        var fileUrl = text(xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>")[1]);
-        var lasUrl = text(xml.match("<aasg:LASFileURL>(.*?)</aasg:LASFileURL>")[1]);
+        var logUrls = [];
 
-        callback({
-          "urls": [logUri, wellUri, fileUrl, lasUrl],
-          "xml": xml,
-        });
+        var logUri = xml.match("<aasg:LogURI>(.*?)</aasg:LogURI>");
+        if (logUri) logUrls.push(logUri[1]);
+        
+        var wellUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>");
+        if (wellUri) logUrls.push(wellUri[1]);
+        
+        var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>");
+        if (fileUrl) logUrls.push(fileUrl[1]);
+
+        var lasUrl = xml.match("<aasg:LASFileURL>(.*?)</aasg:LASFileURL>");
+        if (lasUrl) logUrls.push(lasUrl[1]);
+
+        if (typeof callback === "function") {
+
+          callback({
+            "urls": logUrls,
+            "xml": xml,
+          })
+        }
       })
     } 
     else {
       var outputXML = path.join(directory, file + ".xml");
       console.log(outputXML);
-      request(options).pipe(fs.createWriteStream(outputXML));
+      request(options)
+        .on("response", function () {})
+        .on("error", function () {
+          console.log("ERROR")
+        })
+        .pipe(fs.createWriteStream(outputXML));
     }
   }
 };

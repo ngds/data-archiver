@@ -150,7 +150,7 @@ function doEverything () {
   var dirs = utility.buildDirs(base);
 
   //33875
-  utility.doRequest(1000, 100, function (data) {
+  utility.doRequest(33875, 100, function (data) {
     var base = "http://geothermaldata.org/csw?";
     utility.buildUrl(base, data.counter, data.increment, function (getRecords) {
 
@@ -162,12 +162,13 @@ function doEverything () {
           function (callback) {
             taskSecond(ds, dirs, xml, callback);
           },
-          function (callback) {
+/*          function (callback) {
             taskThird(ds, dirs, xml, callback)
           },
-          function (callback) {
+/*          function (callback) {
             taskFourth(ds, dirs, xml, callback)
           }
+*/
         ], function (error, result) {
           if (error) console.log(error);
         })

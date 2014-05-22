@@ -14,6 +14,8 @@ module.exports = {
     fs.writeFile(outputXml, data, function (error) {
       if (error) {
         console.log(error);
+      } else {
+        console.log("FILE SAVED: " + outputXml);
       }
     });     
   },
@@ -45,31 +47,40 @@ module.exports = {
           if (linkage.indexOf("ftp") === 0) {
             ftp.get(linkage, outputPath, function (err, res) {
               if (err) return console.log(err, res);
+              console.log("FILE SAVED: " + linkage);
             })
           } 
           // Write HTTP files to local outputs folder
           else if (linkage.indexOf("http") === 0 && 
                    linkage.indexOf("https") === -1) {
-            var download = function (url, destination, cb) {
+            var download = function (url, destination, callback) {
               var file = fs.createWriteStream(destination);
               var request = http.get(url, function (response) {
                 response.pipe(file);
                 file.on("finish", function () {
-                  file.close(cb);
+                  console.log("FILE SAVED: " + linkage);
+                  file.close(callback);
                 })
+              })
+              request.on("error", function (error) {
+                console.log(error);
               })
             }
             download(linkage, outputPath);
           } 
           // Write HTTPS files to local outputs folder
           else if (linkage.indexOf("https") === 0) {
-            var download = function (url, destination, cb) {
+            var download = function (url, destination, callback) {
               var file = fs.createWriteStream(destination);
               var request = https.get(url, function (response) {
                 response.pipe(file);
                 file.on("finish", function () {
-                  file.close(cb);
+                  console.log("FILE SAVED: " + linkage);
+                  file.close(callback);
                 })
+              })
+              request.on("error", function (error) {
+                console.log(error);
               })
             }
             download(linkage, outputPath);
