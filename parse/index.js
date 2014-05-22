@@ -9,6 +9,8 @@ var url = require("url");
 var querystring = require("querystring");
 var fs = require("fs");
 var path = require("path");
+var async = require("async");
+var handle = require("../handle");
 
 module.exports = {
   scaleRequest: function (parameters, increment, callback) {
@@ -180,5 +182,42 @@ module.exports = {
         })
         .pipe(fs.createWriteStream(outputXML));
     }
+  },
+  parseOGC: function (directory, linkage) {
+    var module = this;
+    module.parseGetCapabilitiesWFS(linkage, function (getRecords) {
+      async.each(getRecords, function (getRecord) {
+        handle.configurePaths(directory, getRecord, function (response) {
+          handle.buildDirectory(response.directory, function () {
+            var dir = response.directory;
+            var file = response.file;
+            var linkage = response.linkage;
+            module.parseGetFeaturesWFS(dir, file, linkage, function (data) {
+              console.log(data);
+            })
+          })
+        })
+      })
+    })
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

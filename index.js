@@ -74,36 +74,10 @@ function taskThird (glob, dirs, xml, callback) {
       handle.configurePaths(directory, linkage, function (res) {
         handle.downloadFile(res.directory, res.file, res.linkage);
       })
+      parse.parseOGC(directory, linkage);
     } 
   });
   callback(null);
-}
-
-function taskFourth (glob, dirs, xml, callback) {
-  var directory = path.join(dirs["record"], xml.fileId);
-  var dead = _.map(glob["dead"], function (record) {
-    return record["linkage"];
-  });
-
-  async.each(xml.linkages, function (linkage) {
-    var parsedUrl = url.parse(linkage);
-    var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
-
-    if (_.indexOf(dead, host) === -1 && linkage !== "" && linkage !== null) {
-      parse.parseGetCapabilitiesWFS(linkage, function (getRecords) {
-        async.each(getRecords, function (getRecord) {
-          handle.configurePaths(directory, getRecord, function (res) {
-            handle.buildDirectory(res.directory, function () {
-              parse.parseGetFeaturesWFS(res.directory, res.file, res.linkage, function (data) {
-                console.log(data);
-              })
-            })          
-          })
-        })
-      })        
-    } 
-  });
-  callback(null); 
 }
 
 function taskFifth (glob, dirs, xml, callback) {
@@ -153,8 +127,8 @@ function doEverything () {
   utility.doRequest(33875, 100, function (data) {
     var base = "http://geothermaldata.org/csw?";
     utility.buildUrl(base, data.counter, data.increment, function (getRecords) {
-
       parse.parseCsw(getRecords, function (xml) {
+
         async.series([
           function (callback) {
             taskFirst(dirs, xml, callback);
@@ -162,13 +136,9 @@ function doEverything () {
           function (callback) {
             taskSecond(ds, dirs, xml, callback);
           },
-/*          function (callback) {
+          function (callback) {
             taskThird(ds, dirs, xml, callback)
           },
-/*          function (callback) {
-            taskFourth(ds, dirs, xml, callback)
-          }
-*/
         ], function (error, result) {
           if (error) console.log(error);
         })
