@@ -8,6 +8,7 @@ var dom = require("xmldom").DOMParser;
 var url = require("url");
 var querystring = require("querystring");
 var fs = require("fs");
+var path = require("path");
 
 module.exports = {
   scaleRequest: function (parameters, increment, callback) {
@@ -122,6 +123,14 @@ module.exports = {
   // hit the xml with some regular expressions for pulling out URIs and URLs and
   // pass that data to the callback.
   parseGetFeaturesWFS: function (directory, file, linkage) {
+    function text (value) {
+      if (value != null) {
+        return value;
+      } else {
+        return "undefined";
+      }
+    }
+
     var urlQuery = url.parse(linkage)["query"];
     var typeName = querystring.parse(urlQuery)["typeNames"];
       
@@ -146,10 +155,10 @@ module.exports = {
       request(options).pipe(saxParser);
 
       feature.on("match", function (xml) {
-        var logUri = xml.match("<aasg:LogURI>(.*?)</aasg:LogURI>")[1];
-        var wellUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>")[1];
-        var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>")[1];
-        var lasUrl = xml.match("<aasg:LASFileURL>(.*?)</aasg:LASFileURL>")[1];
+        var logUri = text(xml.match("<aasg:LogURI>(.*?)</aasg:LogURI>")[1]);
+        var wellUri = text(xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>")[1]);
+        var fileUrl = text(xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>")[1]);
+        var lasUrl = text(xml.match("<aasg:LASFileURL>(.*?)</aasg:LASFileURL>")[1]);
 
         callback({
           "urls": [logUri, wellUri, fileUrl, lasUrl],

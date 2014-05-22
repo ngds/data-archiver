@@ -84,16 +84,20 @@ function taskFourth (glob, dirs, xml, callback) {
   var dead = _.map(glob["dead"], function (record) {
     return record["linkage"];
   });
+
   async.each(xml.linkages, function (linkage) {
     var parsedUrl = url.parse(linkage);
     var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
-    if (_.indexOf(dead, host) !== -1 && linkage !== "" && linkage !== null) {
+
+    if (_.indexOf(dead, host) === -1 && linkage !== "" && linkage !== null) {
       parse.parseGetCapabilitiesWFS(linkage, function (getRecords) {
         async.each(getRecords, function (getRecord) {
           handle.configurePaths(directory, getRecord, function (res) {
-            parse.parseGetFeaturesWFS(res.directory, res.file, res.linkage, function (data) {
-              console.log(data);
-            })
+            handle.buildDirectory(res.directory, function () {
+              parse.parseGetFeaturesWFS(res.directory, res.file, res.linkage, function (data) {
+                console.log(data);
+              })
+            })          
           })
         })
       })        
@@ -145,7 +149,8 @@ function doEverything () {
 
   var dirs = utility.buildDirs(base);
 
-  utility.doRequest(33875, 100, function (data) {
+  //33875
+  utility.doRequest(1000, 100, function (data) {
     var base = "http://geothermaldata.org/csw?";
     utility.buildUrl(base, data.counter, data.increment, function (getRecords) {
 
