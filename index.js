@@ -8,7 +8,7 @@ var path = require("path");
 var url = require("url");
 var fs = require("fs");
 var _ = require("underscore");
-  //archive = require("./archive");
+//var archive = require("./archive");
 
 var argv = require("yargs")
   .usage("Command line utility for archiving NGDS data on Amazon S3")
@@ -29,7 +29,8 @@ if (argv.urls) cmdQueue.push(doEverything);
 
 async.series(cmdQueue);
 
-function taskFirst (dirs, xml, callback) {
+// Build directories for output files and start streaming XML into text files
+function taskOne (dirs, xml, callback) {
   var directory = path.join(dirs["record"], xml.fileId);
   handle.buildDirectory(directory, function () {
     var outXML = path.join(directory, xml.fileId + ".xml");
@@ -38,7 +39,9 @@ function taskFirst (dirs, xml, callback) {
   callback(null);
 };
 
-function taskSecond (glob, dirs, xml, callback) {
+// 'Glob' is a global object generated to keep track of URL status, in-memory.
+// Ping each unique base URL and return a status to the 'glob'.
+function taskTwo (glob, dirs, xml, callback) {
   async.each(xml.linkages, function (linkage) {
     var parsedUrl = url.parse(linkage);
     var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
@@ -62,33 +65,38 @@ function taskSecond (glob, dirs, xml, callback) {
   callback(null);
 }
 
-function taskThird (glob, dirs, xml, callback) {
+// This function is kind of a mess right now, I'll probably work on it tonight.
+// Here we download the various kinds of data from each linkage.  The tricky 
+// part that I'm wrestling with is how to return when ALL of the links have been
+// downloaded, so that we can zip that sucka and send it to S3.
+function taskThree (glob, dirs, xml, callback) {
   var directory = path.join(dirs["record"], xml.fileId);
   var dead = _.map(glob["dead"], function (record) {
     return record["linkage"];
   });
-  async.each(xml.linkages, function (linkage) {
-    var parsedUrl = url.parse(linkage);
-    var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
-    if (_.indexOf(dead, host) !== -1 && linkage !== "" && linkage !== null) {
-      handle.configurePaths(directory, linkage, function (res) {
-        handle.downloadFile(res.directory, res.file, res.linkage);
-      })
-      parse.parseOGC(directory, linkage);
-    } 
+
+  async.each(xml.linkages, handle.downloadLinkage, function (error) {
+    if (!error) {
+      console.log("DOWNLOAD COMPLETE");
+    } else {
+      callback(error);
+    }
   });
   callback(null, dirs, xml.fileId);
 }
 
-function taskFourth (dirs, directory, callback) {
+// Pretty simply, just zip up a file
+function taskFour (dirs, directory, callback) {
   var uncompressed = path.join(dirs["record"], directory);
   var compressed = path.join(dirs["archive"], directory + ".zip");
   handle.compressDirectory(uncompressed, compressed, function (response) {
-
+  
   })
 }
 
-function taskFifth (glob, dirs, xml, callback) {
+// Write out the information we've logged about URL status in the 'glob' to 
+// permanent text files.
+function taskFive (glob, dirs, xml, callback) {
   var pingLog = path.join(dirs["logs"], "linkage-status.csv");
   var deadLog = path.join(dirs["logs"], "dead-linkages.csv");
   var uniqueLog = path.join(dirs["logs"], "unique-linkages.csv");
@@ -112,44 +120,53 @@ function taskFifth (glob, dirs, xml, callback) {
   ])
 }
 
-
+// Execute all of the code.  This part is tricky, because we need to throttle 
+// the flow of data so that our PCs don't crash.  I've been accomplishing this
+// with the 'async' library (look at the waterfall function which executes all
+// of those numbered functions), but the load changes everytime a new process 
+// is added.
 function doEverything () {
+  // Build the 'glob'
   var DataStore = function () {
     var linkages = {};
     linkages.unique = [];
     linkages.status = [];
     linkages.dead = [];
-
     return linkages;
   };
-
   var ds = new DataStore();
   
-  var base = argv.out 
-      ? argv.out 
-      : path.dirname(require.main.filename);
+  // Establish a base working directory
+  var base = argv.out ? argv.out : path.dirname(require.main.filename);
 
+  // Now build our output directories in the base working directory
   var dirs = utility.buildDirs(base);
 
-  //33875
-  utility.doRequest(33875, 100, function (data) {
+  // Now build our request URLs and execute the waterfall of processing 
+  // functions.  Async is proving to be invaluable for organizing all of this
+  // asynchronous processing, but right now it's only controlling the flow of
+  // functions local to this file.  I'm starting to think that we're going to
+  // need to do flow control with async throughout the entire project.
+  utility.doRequest(/*33875*/1000, 100, function (data) {
     var base = "http://geothermaldata.org/csw?";
     utility.buildUrl(base, data.counter, data.increment, function (getRecords) {
       parse.parseCsw(getRecords, function (xml) {
 
         async.waterfall([
           function (callback) {
-            taskFirst(dirs, xml, callback);
+            taskOne(dirs, xml, callback);
           },
           function (callback) {
-            taskSecond(ds, dirs, xml, callback);
+            taskTwo(ds, dirs, xml, callback);
           },
           function (callback) {
-            taskThird(ds, dirs, xml, callback)
+            taskThree(ds, dirs, xml, callback)
           },
+/*
           function (dirs, directory, callback) {
-            taskFourth(dirs, directory, callback)
+            taskFour(dirs, directory, callback)
           }
+*/
         ], function (error, result) {
           if (error) console.log(error);
         })

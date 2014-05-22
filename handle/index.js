@@ -7,6 +7,7 @@ var path = require("path");
 var _ = require("underscore");
 var url = require("url");
 var archiver = require("archiver");
+var async = require("async");
 
 module.exports = {
   // Write out XML data held in-memory to a text file.
@@ -32,7 +33,7 @@ module.exports = {
   },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
-  downloadFile: function (directory, file, linkage) {
+  downloadFile: function (directory, file, linkage, callback) {
     var directory = directory.replace(/(\r\n|\n|\r)/gm,"");
     var file = file.replace(/(\r\n|\n|\r)/gm,"");
 
@@ -47,7 +48,7 @@ module.exports = {
           if (linkage.indexOf("ftp") === 0) {
             ftp.get(linkage, outputPath, function (err, res) {
               if (err) return console.log(err, res);
-              console.log("FILE SAVED: " + linkage);
+              callback(null);
             })
           } 
           // Write HTTP files to local outputs folder
@@ -58,12 +59,12 @@ module.exports = {
               var request = http.get(url, function (response) {
                 response.pipe(file);
                 file.on("finish", function () {
-                  console.log("FILE SAVED: " + linkage);
                   file.close(callback);
+                  callback(null);
                 })
               })
               request.on("error", function (error) {
-                console.log(error);
+                callback(error);
               })
             }
             download(linkage, outputPath);
@@ -75,12 +76,12 @@ module.exports = {
               var request = https.get(url, function (response) {
                 response.pipe(file);
                 file.on("finish", function () {
-                  console.log("FILE SAVED: " + linkage);
                   file.close(callback);
+                  callback(null);
                 })
               })
               request.on("error", function (error) {
-                console.log(error);
+                callback(error);
               })
             }
             download(linkage, outputPath);
@@ -163,8 +164,6 @@ module.exports = {
   },
   // Given a path to a directory, compress the directory as a ZIP archive.
   compressDirectory: function (uncompressed, compressed, callback) {
-    console.log(uncompressed);
-    console.log(compressed);
     var zipped = fs.createWriteStream(compressed);
     var archive = archiver("zip");
 
@@ -178,15 +177,23 @@ module.exports = {
 
     archive.pipe(zipped);
     archive.bulk([
-      {expand: true, cwd: uncompressed, src: ["**"]}
+      {expand: true, cwd: uncompressed, src: ["*"]}
     ]);
     archive.finalize();
+  },
+  downloadLinkage: function (linkage, directory, dead) {
+    var module = this;
+    var parsedUrl = url.parse(linkage);
+    var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
+    if (_.indexOf(dead, host) !== -1  && linkage !== "" && linkage !== null) {
+      module.configurePaths(directory, linkage, function (res) {
+        module.downloadFile(res.directory, res.file, res.linkage, function (error) {
+          if (error) console.log(error);
+        });
+      })    
+    }
   }
 };
-
-
-
-
 
 
 
