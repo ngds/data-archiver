@@ -31,7 +31,7 @@ module.exports = {
   },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
-  downloadFile: function (directory, file, linkage, dcallback) {
+  downloadFile: function (directory, file, linkage, callback) {
     var directory = directory.replace(/(\r\n|\n|\r)/gm,"");
     var file = file.replace(/(\r\n|\n|\r)/gm,"");
 
@@ -47,28 +47,30 @@ module.exports = {
             ftp.get(linkage, outputPath, function (err, res) {
               if (err) return console.log(err, res);
               if (typeof callback === "function")
-                dcallback(null);
+                callback(null);
             })
           } 
           // Write HTTP files to local outputs folder
           else if (linkage.indexOf("http") === 0 && 
                    linkage.indexOf("https") === -1) {
+            
             var download = function (url, destination, callback) {
               var file = fs.createWriteStream(destination);
               var request = http.get(url, function (response) {
                 response.pipe(file);
                 file.on("finish", function () {
                   file.close(callback);
-                  if (typeof callback === "function")
-                    callback(null);
                 })
               })
               request.on("error", function (error) {
-                dcallback(error);
+                callback(error);
               })
             }
-            download(linkage, outputPath);
-          } 
+
+            download(linkage, outputPath, function (data) {
+              callback(callback(data));
+            });
+          }
           // Write HTTPS files to local outputs folder
           else if (linkage.indexOf("https") === 0) {
             var download = function (url, destination, callback) {
@@ -77,19 +79,21 @@ module.exports = {
                 response.pipe(file);
                 file.on("finish", function () {
                   file.close(callback);
-                  if (typeof callback === "function")
-                    dcallback(null);
                 })
               })
               request.on("error", function (error) {
-                dcallback(error);
+                callback(error);
               })
             }
-            download(linkage, outputPath);
+
+            download(linkage, outputPath, function (data) {
+              callback(callback(data));
+            });
           }
         }
       })
     })
+    // ACK, CALLBACK SHOULD BE IN THIS SCOPE.  THIS IS WHY THE PROGRAM IS FAILING.
   },
   // Given an FTP or HTTP URL, ping it to see if the URL is alive.  If it is, 
   // continue with business as usual.  If not, then write out the URL to a dead
