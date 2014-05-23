@@ -30,14 +30,40 @@ if (argv.urls) cmdQueue.push(doEverything);
 async.series(cmdQueue);
 
 // Build directories for output files and start streaming XML into text files
-function taskOne (dirs, xml, callback) {
+function taskOne (task, callback) {
+  var dirs = task["dirs"];
+  var xml = task["xml"];
+
   var directory = path.join(dirs["record"], xml.fileId);
   handle.buildDirectory(directory, function () {
     var outXML = path.join(directory, xml.fileId + ".xml");
     handle.writeXML(outXML, xml.fullRecord);
+    doDownload(xml.linkages, directory, function () {
+      callback();
+    });
   })
-  callback(null);
 };
+
+function doDownload (linkages, directory, callback) {
+  function download (linkage) {
+    var parsedUrl = url.parse(linkage);
+    var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
+    handle.configurePaths(directory, linkage, function (res) {
+      console.log(res);
+      handle.downloadFile(res.directory, res.file, res.linkage, function (error) {
+        if (error) console.log(error);
+      });
+    })
+  }
+
+  async.each(linkages, download, function (error) {
+    if (error) {
+      callback(error);
+    } else {
+      callback();
+    }
+  })
+}
 
 // 'Glob' is a global object generated to keep track of URL status, in-memory.
 // Ping each unique base URL and return a status to the 'glob'.
@@ -75,23 +101,26 @@ function taskThree (glob, dirs, xml, callback) {
     return record["linkage"];
   });
 
-  async.each(xml.linkages, handle.downloadLinkage, function (error) {
-    if (!error) {
-      console.log("DOWNLOAD COMPLETE");
-    } else {
+  async.each(xml.linkages, handle.downloadLinkage.bind(null, directory, dead, handle), function (error) {
+    if (error) {
       callback(error);
+    } else {
+      console.log(directory);
+    callback(null, dirs, xml.fileId);
     }
   });
-  callback(null, dirs, xml.fileId);
 }
 
 // Pretty simply, just zip up a file
 function taskFour (dirs, directory, callback) {
+  console.log(dirs, directory);
+/*
   var uncompressed = path.join(dirs["record"], directory);
   var compressed = path.join(dirs["archive"], directory + ".zip");
   handle.compressDirectory(uncompressed, compressed, function (response) {
   
   })
+*/
 }
 
 // Write out the information we've logged about URL status in the 'glob' to 
@@ -142,43 +171,34 @@ function doEverything () {
   // Now build our output directories in the base working directory
   var dirs = utility.buildDirs(base);
 
+  var queue = async.queue(function (task, callback) {
+      taskOne(task, function () {
+        callback();
+      });
+  }, 10);
+
+  queue.drain = function () {
+    console.log("All items have been processed");
+  }
+
   // Now build our request URLs and execute the waterfall of processing 
   // functions.  Async is proving to be invaluable for organizing all of this
   // asynchronous processing, but right now it's only controlling the flow of
   // functions local to this file.  I'm starting to think that we're going to
   // need to do flow control with async throughout the entire project.
-  utility.doRequest(/*33875*/1000, 100, function (data) {
+  utility.doRequest(/*33875*/1000, 10, function (data) {
     var base = "http://geothermaldata.org/csw?";
     utility.buildUrl(base, data.counter, data.increment, function (getRecords) {
-      parse.parseCsw(getRecords, function (xml) {
 
-        async.waterfall([
-          function (callback) {
-            taskOne(dirs, xml, callback);
-          },
-          function (callback) {
-            taskTwo(ds, dirs, xml, callback);
-          },
-          function (callback) {
-            taskThree(ds, dirs, xml, callback)
-          },
-/*
-          function (dirs, directory, callback) {
-            taskFour(dirs, directory, callback)
-          }
-*/
-        ], function (error, result) {
+      parse.parseCsw(getRecords, function (xml) {
+        var recData = {
+          "dirs": dirs,
+          "xml": xml,
+        }
+        queue.push(recData, function (error) {
           if (error) console.log(error);
         })
       })
     })
   })
 }
-
-
-
-
-
-
-
-

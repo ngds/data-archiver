@@ -15,8 +15,6 @@ module.exports = {
     fs.writeFile(outputXml, data, function (error) {
       if (error) {
         console.log(error);
-      } else {
-        console.log("FILE SAVED: " + outputXml);
       }
     });     
   },
@@ -33,7 +31,7 @@ module.exports = {
   },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
-  downloadFile: function (directory, file, linkage, callback) {
+  downloadFile: function (directory, file, linkage, dcallback) {
     var directory = directory.replace(/(\r\n|\n|\r)/gm,"");
     var file = file.replace(/(\r\n|\n|\r)/gm,"");
 
@@ -48,7 +46,8 @@ module.exports = {
           if (linkage.indexOf("ftp") === 0) {
             ftp.get(linkage, outputPath, function (err, res) {
               if (err) return console.log(err, res);
-              callback(null);
+              if (typeof callback === "function")
+                dcallback(null);
             })
           } 
           // Write HTTP files to local outputs folder
@@ -60,11 +59,12 @@ module.exports = {
                 response.pipe(file);
                 file.on("finish", function () {
                   file.close(callback);
-                  callback(null);
+                  if (typeof callback === "function")
+                    callback(null);
                 })
               })
               request.on("error", function (error) {
-                callback(error);
+                dcallback(error);
               })
             }
             download(linkage, outputPath);
@@ -77,11 +77,12 @@ module.exports = {
                 response.pipe(file);
                 file.on("finish", function () {
                   file.close(callback);
-                  callback(null);
+                  if (typeof callback === "function")
+                    dcallback(null);
                 })
               })
               request.on("error", function (error) {
-                callback(error);
+                dcallback(error);
               })
             }
             download(linkage, outputPath);
@@ -181,18 +182,6 @@ module.exports = {
     ]);
     archive.finalize();
   },
-  downloadLinkage: function (linkage, directory, dead) {
-    var module = this;
-    var parsedUrl = url.parse(linkage);
-    var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
-    if (_.indexOf(dead, host) !== -1  && linkage !== "" && linkage !== null) {
-      module.configurePaths(directory, linkage, function (res) {
-        module.downloadFile(res.directory, res.file, res.linkage, function (error) {
-          if (error) console.log(error);
-        });
-      })    
-    }
-  }
 };
 
 
