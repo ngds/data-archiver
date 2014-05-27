@@ -32,7 +32,7 @@ module.exports = {
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
   downloadFTP: function (linkage, path, callback) {
-    ftp.get(linkage, outputPath, function (err, res) {
+    ftp.get(linkage, path, function (err, res) {
       if (err) return callback(err, res);
       if (typeof callback === "function")
         callback("DOWNLOADED FTP");
@@ -66,30 +66,35 @@ module.exports = {
 
       var directory = res.directory.replace(/(\r\n|\n|\r)/gm,"");
       var file = res.file.replace(/(\r\n|\n|\r)/gm,"");
+      var outputPath = path.join(directory, file);
 
       module.buildDirectory(directory, function (error) {
 
         fs.exists(directory, function (exists) {
-          if (exists) {
-
-            var outputPath = path.join(directory, file);                
+          if (exists) {                
             // Write FTP files to local outputs folder
             if (res.linkage.indexOf("ftp") === 0) {
               module.downloadFTP(res.linkage, outputPath, function () {
-                callback("DOWNLOADED FTP");
+                if (typeof callback === "function") {
+                  callback("DOWNLOADED FTP");
+                }
               })
             } 
             // Write HTTP files to local outputs folder
             else if (res.linkage.indexOf("http") === 0 && 
                      res.linkage.indexOf("https") === -1) {
               module.downloadHTTP(res.linkage, outputPath, function () {
-                callback("DOWNLOADED HTTP");
+                if (typeof callback === "function") {
+                  callback("DOWNLOADED HTTP");
+                }
               })
             }
             // Write HTTPS files to local outputs folder
             else if (res.linkage.indexOf("https") === 0) {
               module.downloadHTTPS(res.linkage, outputPath, function () {
-                callback("DOWNLOADED HTTPS");
+                if (typeof callback === "function") {
+                  callback("DOWNLOADED HTTPS");
+                }
               })
             }
           }
