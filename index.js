@@ -25,11 +25,34 @@ if (argv.parse) cmdQueue.push(parseCsw);
 async.series(cmdQueue);
 
 function parseCsw () {
+  var DataStore = function () {
+    var linkages = {};
+    linkages.unique = [];
+    linkages.status = [];
+    linkages.dead = [];
+    return linkages;
+  };
+  var datastore = new DataStore();
   var base = argv.out ? argv.out : path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
 
-  function pinger () {
-
+  function pinger (data, store, callback) {
+    async.forEach(data.linkages, function (linkage) {
+      var parsedUrl = url.parse(linkage);
+      var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
+      if (_.indexOf(store["unique"], host) === -1) {
+        handle.pingUrl(linkage, function (error, response) {
+          if (error)
+            error["ping"] = "DEAD";
+            store["dead"].push(error);
+            store["status"].push(error);
+          if (response)
+            response["ping"] = "ALIVE";
+            store["status"].push(response);
+        })
+      }
+    })
+    callback(null);
   };
 
   function constructor (item, callback) {
