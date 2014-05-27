@@ -61,6 +61,8 @@ module.exports = {
       })
       .pipe(saxParser);
 
+    var data = [];
+
     fullRecord.on("match", function (xml) {
       var idReg = new RegExp(/<gmd:fileIdentifier><gco:CharacterString>(.*?)<\/gco:CharacterString><\/gmd:fileIdentifier>/g);
       var urlReg = new RegExp(/<gmd:URL>(.*?)<\/gmd:URL>/g);
@@ -73,14 +75,16 @@ module.exports = {
         linkages.push(match[1]);
       };
 
-      if (typeof callback === "function") {
-        callback({
-          "fileId": fileId,
-          "linkages": linkages,
-          "fullRecord": xml,
-        })
-      }
+      data.push({
+        "fileId": fileId,
+        "linkages": linkages,
+        "fullRecord": xml,
+      })
     });
+
+    fullRecord.on("end", function () {
+      callback(data);
+    })
   },
   // Given an array of linkage URLs, pull out the WFS getCapabilities URLs and 
   // ping them.  If URL returns 200, then pull out the getFeatures service 

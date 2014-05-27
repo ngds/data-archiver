@@ -31,69 +31,71 @@ module.exports = {
   },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
-  downloadFile: function (directory, file, linkage, callback) {
-    var directory = directory.replace(/(\r\n|\n|\r)/gm,"");
-    var file = file.replace(/(\r\n|\n|\r)/gm,"");
-
-    this.buildDirectory(directory, function (error) {
-
-      fs.exists(directory, function (exists) {
-        if (exists) {
-
-          var outputPath = path.join(directory, file);
-              
-          // Write FTP files to local outputs folder
-          if (linkage.indexOf("ftp") === 0) {
-            ftp.get(linkage, outputPath, function (err, res) {
-              if (err) return console.log(err, res);
-              if (typeof callback === "function")
-                callback(null);
-            })
-          } 
-          // Write HTTP files to local outputs folder
-          else if (linkage.indexOf("http") === 0 && 
-                   linkage.indexOf("https") === -1) {
-            
-            var download = function (url, destination, callback) {
-              var file = fs.createWriteStream(destination);
-              var request = http.get(url, function (response) {
-                response.pipe(file);
-                file.on("finish", function () {
-                  file.close(callback);
-                })
-              })
-              request.on("error", function (error) {
-                callback(error);
-              })
-            }
-
-            download(linkage, outputPath, function (data) {
-              callback(callback(data));
-            });
-          }
-          // Write HTTPS files to local outputs folder
-          else if (linkage.indexOf("https") === 0) {
-            var download = function (url, destination, callback) {
-              var file = fs.createWriteStream(destination);
-              var request = https.get(url, function (response) {
-                response.pipe(file);
-                file.on("finish", function () {
-                  file.close(callback);
-                })
-              })
-              request.on("error", function (error) {
-                callback(error);
-              })
-            }
-
-            download(linkage, outputPath, function (data) {
-              callback(callback(data));
-            });
-          }
-        }
+  downloadFTP: function (linkage, path, callback) {
+    ftp.get(linkage, outputPath, function (err, res) {
+      if (err) return callback(err, res);
+      if (typeof callback === "function")
+        callback("DOWNLOADED FTP");
       })
+  },
+  downloadHTTP: function (linkage, path, callback) {
+    var file = fs.createWriteStream(path);
+    http.get(linkage, function (response) {
+      response.pipe(file);
+      file.on("finish", function () {
+        file.close(callback);
+      })
+    }).on("error", function (error) {
+      callback(error);
     })
-    // ACK, CALLBACK SHOULD BE IN THIS SCOPE.  THIS IS WHY THE PROGRAM IS FAILING.
+  },
+  downloadHTTPS: function (linkage, path, callback) {
+    var file = fs.createWriteStream(path);
+    https.get(linkage, function (response) {
+      response.pipe(file);
+      file.on("finish", function () {
+        file.close(callback);
+      })
+    }).on("error", function (error) {
+      callback(error);
+    })
+  },
+  downloadFile: function (directory, linkage, callback) {
+    var module = this;
+    this.configurePaths(directory, linkage, function (res) {
+
+      var directory = res.directory.replace(/(\r\n|\n|\r)/gm,"");
+      var file = res.file.replace(/(\r\n|\n|\r)/gm,"");
+
+      module.buildDirectory(directory, function (error) {
+
+        fs.exists(directory, function (exists) {
+          if (exists) {
+
+            var outputPath = path.join(directory, file);                
+            // Write FTP files to local outputs folder
+            if (res.linkage.indexOf("ftp") === 0) {
+              module.downloadFTP(res.linkage, outputPath, function () {
+                callback("DOWNLOADED FTP");
+              })
+            } 
+            // Write HTTP files to local outputs folder
+            else if (res.linkage.indexOf("http") === 0 && 
+                     res.linkage.indexOf("https") === -1) {
+              module.downloadHTTP(res.linkage, outputPath, function () {
+                callback("DOWNLOADED HTTP");
+              })
+            }
+            // Write HTTPS files to local outputs folder
+            else if (res.linkage.indexOf("https") === 0) {
+              module.downloadHTTPS(res.linkage, outputPath, function () {
+                callback("DOWNLOADED HTTPS");
+              })
+            }
+          }
+        })
+      })      
+    })
   },
   // Given an FTP or HTTP URL, ping it to see if the URL is alive.  If it is, 
   // continue with business as usual.  If not, then write out the URL to a dead

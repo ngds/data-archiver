@@ -9,6 +9,9 @@ var url = require("url");
 var fs = require("fs");
 var _ = require("underscore");
 
+var stream = require("stream").Stream();
+
+
 var argv = require("yargs")
   .usage("Command line utility for archiving NGDS data on Amazon S3")
 
@@ -21,6 +24,45 @@ if (argv.parse) cmdQueue.push(parseCsw);
 
 async.series(cmdQueue);
 
+function parseCsw () {
+  var base = argv.out ? argv.out : path.dirname(require.main.filename);
+  var dirs = utility.buildDirs(base);
+
+  var queue = async.queue(function (getRecordUrl, callback) {
+    parse.parseCsw(getRecordUrl, function (data) {
+      async.each(data, function (item) {
+        var directory = path.join(dirs["record"], item.fileId);
+        handle.buildDirectory(directory, function () {
+          var outXML = path.join(directory, item.fileId + ".xml");
+          handle.writeXML(outXML, item.fullRecord);
+          async.each(item.linkages, function (linkage) {
+            handle.downloadFile(directory, linkage, function (res) {
+              console.log(res);
+            })
+          })
+        })
+      })
+      callback();
+    })
+  }, 1);
+
+  queue.drain = function () {
+    console.log("All getRecordUrls have been processed.");
+  }
+  
+  function getRecordsList () {
+    utility.doRequest(/*33875*/10000, 100, function (x) {
+      var base = "http://geothermaldata.org/csw?";
+      utility.buildUrl(base, x.counter, x.increment, function (getRecords) {
+        queue.push(getRecords);
+      });
+    })
+  }
+
+  getRecordsList();
+}
+
+/*
 function parseCsw () {
   var base = argv.out ? argv.out : path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
@@ -65,7 +107,7 @@ function parseCsw () {
 
   function getRecordsList () {
     var xs = [];
-    utility.doRequest(/*33875*/1000, 10, function (x) {
+    utility.doRequest(33875, 10, function (x) {
       var base = "http://geothermaldata.org/csw?";
       utility.buildUrl(base, x.counter, x.increment, function (getRecords) {
         xs.push(getRecords);
@@ -81,3 +123,4 @@ function parseCsw () {
     console.log(result);
   })
 }
+*/
