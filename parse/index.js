@@ -126,7 +126,7 @@ module.exports = {
   // with the parent tag specified in the 'feature' variable.  On each match,
   // hit the xml with some regular expressions for pulling out URIs and URLs and
   // pass that data to the callback.
-  parseGetFeaturesWFS: function (directory, file, linkage) {
+  parseGetFeaturesWFS: function (linkage, directory, file, callback) {
     var urlQuery = url.parse(linkage)["query"];
     var typeName = querystring.parse(urlQuery)["typeNames"];
       
@@ -173,46 +173,29 @@ module.exports = {
           })
         }
       })
-    } 
-    else {
+    } else {
       fs.exists(directory, function (exists) {
         var outputXML = path.join(directory, file + ".xml");
-        console.log(outputXML);
-        request(options)
-          .on("response", function () {})
-          .on("error", function () {
-            console.log("ERROR")
+        http.get(options, function (response) {
+          var file = fs.createWriteStream(outputXML);
+          response.pipe(file);
+
+          file.on("close", function () {
+            callback();
           })
-          .pipe(fs.createWriteStream(outputXML));        
-      })
-    }
-  },
-  parseOGC: function (directory, linkage) {
-    var module = this;
-    module.parseGetCapabilitiesWFS(linkage, function (getRecords) {
-      async.each(getRecords, function (getRecord) {
-        handle.configurePaths(directory, getRecord, function (response) {
-          handle.buildDirectory(response.directory, function () {
-            var dir = response.directory;
-            var file = response.file;
-            var linkage = response.linkage;
-            module.parseGetFeaturesWFS(dir, file, linkage, function (data) {
-              console.log(data);
-            })
+
+          file.on("error", function (error) {
+            callback(error);
+          })
+
+          response.on("error", function (error) {
+            file.end();
           })
         })
       })
-    })
-  }
+    }
+  },
 };
-
-
-
-
-
-
-
-
 
 
 

@@ -109,7 +109,15 @@ function parseCsw () {
       async.forEach(data.linkages, function (linkage) {
         utility.checkLinkage(datastore["dead"], linkage, function (linkage) {
           if (linkage.search("service=WFS") != -1) {
-            
+            parse.parseGetCapabilitiesWFS(linkage, function (linkages) {
+              async.forEach(linkages, function (linkage) {
+                handle.configurePaths(directory, linkage, function (res) {
+                  parse.parseGetFeaturesWFS(res.linkage, res.directory, res.file, function (data) {
+                    console.log("WFS: " + data);
+                  })
+                })
+              })
+            })
           } else {
             handle.downloadFile(directory, linkage, function (response) {
               console.log(response);
