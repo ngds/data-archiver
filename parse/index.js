@@ -91,38 +91,36 @@ module.exports = {
   // endpoint and the typeNames.  If the typeName matches 'aasg:WellLog', then 
   // construct a getFeatures URL and pass it to the callback.
   parseGetCapabilitiesWFS: function (linkage, callback) {
-    if (linkage.search("service=WFS") != -1) {
-      var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
-      var capabilities = new saxpath.SaXPath(saxParser, "/wfs:WFS_Capabilities");
-      
-      var options = {
-        "url": linkage,
-        "headers": {
-        "Content-type": "text/xml;charset=utf-8",
-        }      
-      };
+    var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
+    var capabilities = new saxpath.SaXPath(saxParser, "/wfs:WFS_Capabilities");
 
-      request(linkage, function (error, response) {
-        if (!error && response.statusCode == 200) {
-          request(options).pipe(saxParser);
-          capabilities.on("match", function (xml) {
-            var doc = new dom().parseFromString(xml);
-            var httpGetPath = xpath(doc, "//ows:OperationsMetadata/ows:Ope" +
-                                         "ration/ows:DCP/ows:HTTP/ows:Get/" +
-                                         "@xlink:href");
-            var typeNamePath = xpath(doc, "//wfs:FeatureTypeList/wfs:Featu" +
-                                          "reType/wfs:Name");
-            var endpoint = httpGetPath[0].value;
-            
-            var getFeatures = _.map(typeNamePath, function (typeName) {
-              return endpoint + "request=GetFeature&service=WFS&version=" +
-                     "2.0.0&typeNames=" + typeName.firstChild.data;
-            });
-            callback(getFeatures);
-          })
-        }
-      });
-    }
+    var options = {
+      "url": linkage,
+      "headers": {
+      "Content-type": "text/xml;charset=utf-8",
+      }      
+    };
+
+    request(linkage, function (error, response) {
+      if (!error && response.statusCode == 200) {
+        request(options).pipe(saxParser);
+        capabilities.on("match", function (xml) {
+          var doc = new dom().parseFromString(xml);
+          var httpGetPath = xpath(doc, "//ows:OperationsMetadata/ows:Ope" +
+                                       "ration/ows:DCP/ows:HTTP/ows:Get/" +
+                                       "@xlink:href");
+          var typeNamePath = xpath(doc, "//wfs:FeatureTypeList/wfs:Featu" +
+                                        "reType/wfs:Name");
+          var endpoint = httpGetPath[0].value;
+          
+          var getFeatures = _.map(typeNamePath, function (typeName) {
+            return endpoint + "request=GetFeature&service=WFS&version=" +
+                   "2.0.0&typeNames=" + typeName.firstChild.data;
+          });
+          callback(getFeatures);
+        })
+      }
+    });
   },
   // Given a WFS getFeatures URL, stream stream out all of the data associated 
   // with the parent tag specified in the 'feature' variable.  On each match,

@@ -107,9 +107,15 @@ function parseCsw () {
     handle.buildDirectory(directory, function () {
       handle.writeXML(outXML);
       async.forEach(data.linkages, function (linkage) {
-        handle.downloadFile(directory, linkage, function (res) {
-          console.log(res);         
-        });
+        utility.checkLinkage(datastore["dead"], linkage, function (linkage) {
+          if (linkage.search("service=WFS") != -1) {
+            
+          } else {
+            handle.downloadFile(directory, linkage, function (response) {
+              console.log(response);
+            });
+          }
+        })
       })
     callback("DOWNLOADED: " + directory); 
     })
