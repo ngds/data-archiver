@@ -51,10 +51,6 @@ module.exports = {
         counter += increment;
         callback({"counter": counter, "increment": increment});
       }
-      if (counter === holder) {
-        increment = (last - holder);
-        callback({"counter": counter, "increment": increment});
-      }
     })
   },
   _scaleRequest: function (total, increment, callback) {

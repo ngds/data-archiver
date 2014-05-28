@@ -35,13 +35,19 @@ function parseCsw () {
   var datastore = new DataStore();
   var base = argv.out ? argv.out : path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
+  var logs = {
+    "status": path.join(dirs["logs"], "linkage-status.csv"),
+    "dead": path.join(dirs["logs"], "dead-linkages.csv"),
+    "unique": path.join(dirs["logs"], "unique-linkages.csv"),
+  }
 
   function pinger (data, store, callback) {
     async.forEach(data.linkages, function (linkage) {
       var parsedUrl = url.parse(linkage);
       var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
       if (_.indexOf(store["unique"], host) === -1) {
-        handle.pingUrl(linkage, function (error, response) {
+        store["unique"].push(host);
+        handle.pingUrl(host, function (error, response) {
           if (error)
             error["ping"] = "DEAD";
             store["dead"].push(error);
@@ -54,6 +60,33 @@ function parseCsw () {
     })
     callback(null);
   };
+
+  function writeUrlStatus (store, logs, callback) {
+    async.series([
+      function (callback) {
+        handle.linkageLogger(store["unique"], logs["unique"], function (error, response) {
+          if (error) callback(null, error);
+          callback(null, response);
+        })
+      },
+      function (callback) {
+        handle.linkageLogger(store["status"], logs["status"], function (error, response) {
+          if (error) callback(null, error);
+          callback(null, response);
+        })
+      },
+      function (callback) {
+        handle.linkageLogger(store["dead"], logs["dead"], function (error, response) {
+          if (error) callback(null, error);
+          callback(null, response);
+        })
+      },
+    ],
+    function (error, results) {
+      if (error) callback(error);
+      callback(results);
+    })
+  }
 
   function constructor (item, callback) {
     var directory = path.join(dirs["record"], item.fileId);
@@ -74,9 +107,11 @@ function parseCsw () {
     handle.buildDirectory(directory, function () {
       handle.writeXML(outXML);
       async.forEach(data.linkages, function (linkage) {
-        handle.downloadFile(directory, linkage);
+        handle.downloadFile(directory, linkage, function (res) {
+          console.log(res);         
+        });
       })
-      callback("ALL DONE: " + outXML);
+    callback("DOWNLOADED: " + directory); 
     })
   };
 
@@ -85,28 +120,34 @@ function parseCsw () {
       async.each(data, function (item) {
         async.waterfall([
           function (callback) {
+            pinger(item, datastore, callback);
+          },
+          function (callback) {
             constructor(item, callback);
           },
           function (data, callback) {
-            processor(data, function (data) {
-              console.log(data);
-            })
+            processor(data, function (response) {
+              console.log(response);
+            });
           },
         ], function (error, result) {
-          if (error) console.log(error);
+          if (error) callback(error);
         });
       })
-      callback();
+    callback();
     })
   }, 1);
 
   queue.drain = function () {
-    console.log("All getRecordUrls have been processed.");
+    if (queue.length() === 0) {
+      console.log("All getRecordUrls have been processed.");      
+    }
   }
   
   function startQueue () {
-    utility.doRequest(/*33875*/10000, 5, function (x) {
+    utility.doRequest(33875, 5, function (x) {
       var base = "http://geothermaldata.org/csw?";
+      console.log(x)
       utility.buildUrl(base, x.counter, x.increment, function (getRecords) {
         queue.push(getRecords);
       });

@@ -12,22 +12,14 @@ var async = require("async");
 module.exports = {
   // Write out XML data held in-memory to a text file.
   writeXML: function (outputXml, data) { 
-    fs.writeFile(outputXml, data, function (error) {
-      if (error) {
-        console.log(error);
-      }
-    });     
-  },
-  writeLinkage: function (logFile, linkage) {
-    var date = new Date().toISOString();
-    var text = linkage + "," + date + ",\n";
-    fs.appendFile(logFile, text, function (error) {
-      if (error) throw error;
-    })
+    fs.writeFileSync(outputXml, data);
   },
   linkageLogger: function (data, log, callback) {
-    console.log(data);
-    callback();
+    fs.writeFile(log, data, function (error) {
+      if (error)
+        callback(error);
+      callback();
+    })
   },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
