@@ -114,7 +114,7 @@ function parseCsw () {
                 handle.configurePaths(directory, linkage, function (res) {
                   handle.buildDirectory(res.directory, function () {
                     parse.parseGetFeaturesWFS(res.linkage, res.directory, res.file, function (data) {
-                      console.log("WFS: " + data);
+                      
                     })                    
                   })
                 })

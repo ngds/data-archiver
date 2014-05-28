@@ -158,19 +158,28 @@ module.exports = {
 
         console.log(xml);
 
-        var logUrls = [];
-
-        var logUri = xml.match("<aasg:LogURI>(.*?)</aasg:LogURI>");
-        if (logUri) logUrls.push(logUri[1]);
-        
-        var wellUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>");
-        if (wellUri) logUrls.push(wellUri[1]);
-        
+        var logInfo = {};
+        logInfo["linkages"] = [];
         var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>");
-        if (fileUrl) logUrls.push(fileUrl[1]);
 
-        var lasUrl = xml.match("<aasg:LASFileURL>(.*?)</aasg:LASFileURL>");
-        if (lasUrl) logUrls.push(lasUrl[1]);
+        if (fileUrl) {
+          fileUrl = fileUrl[1];
+          var illegalChars - [",", ";", "|"];
+          _.each(illegalChars, function (char) {
+            if (fileUrl.indexOf(char) > -1) {
+              files = fileUrl.split(char);
+              _.each(files, function (file) {
+                logInfo["linkages"].push(file);
+              })
+            } else {
+              logInfo["linkages"].push(fileUrl);
+            }            
+          });
+
+          var filePath = fileUrl.split("/").pop();
+          var fileSplit = filePath.split(".")[1];
+          logInfo["fileId"] = fileSplit + ".xml";
+        }
 
         if (typeof callback === "function") {
 
@@ -206,6 +215,9 @@ module.exports = {
       })
     }
   },
+  parseWellLogs: function (data) {
+
+  }
 };
 
 
