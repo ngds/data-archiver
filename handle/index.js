@@ -31,25 +31,41 @@ module.exports = {
       })
   },
   downloadHTTP: function (linkage, path, callback) {
-    var file = fs.createWriteStream(path);
     http.get(linkage, function (response) {
+
+      var file = fs.createWriteStream(path);
       response.pipe(file);
-      file.on("finish", function () {
-        file.close(callback);
+
+      file.on("close", function () {
+        callback();
+      });
+
+      file.on("error", function (error) {
+        callback(error);
+      });
+
+      response.on("error", function (error) {
+        file.end();
       })
-    }).on("error", function (error) {
-      callback(error);
     })
   },
   downloadHTTPS: function (linkage, path, callback) {
-    var file = fs.createWriteStream(path);
     https.get(linkage, function (response) {
+
+      var file = fs.createWriteStream(path);
       response.pipe(file);
-      file.on("finish", function () {
-        file.close(callback);
+
+      file.on("close", function () {
+        callback();
+      });
+
+      file.on("error", function (error) {
+        callback(error);
+      });
+      
+      response.on("error", function (error) {
+        file.end();
       })
-    }).on("error", function (error) {
-      callback(error);
     })
   },
   downloadFile: function (directory, linkage, callback) {

@@ -116,6 +116,7 @@ function parseCsw () {
   };
 
   var queue = async.queue(function (getRecordUrl, callback) {
+    console.log(getRecordUrl);
     parse.parseCsw(getRecordUrl, function (data) {
       async.each(data, function (item) {
         async.waterfall([
@@ -147,7 +148,6 @@ function parseCsw () {
   function startQueue () {
     utility.doRequest(33875, 5, function (x) {
       var base = "http://geothermaldata.org/csw?";
-      console.log(x)
       utility.buildUrl(base, x.counter, x.increment, function (getRecords) {
         queue.push(getRecords);
       });
