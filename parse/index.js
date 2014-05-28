@@ -117,6 +117,7 @@ module.exports = {
             return endpoint + "request=GetFeature&service=WFS&version=" +
                    "2.0.0&typeNames=" + typeName.firstChild.data;
           });
+          console.log(getFeatures);
           callback(getFeatures);
         })
       }
@@ -129,13 +130,6 @@ module.exports = {
   parseGetFeaturesWFS: function (linkage, directory, file, callback) {
     var urlQuery = url.parse(linkage)["query"];
     var typeName = querystring.parse(urlQuery)["typeNames"];
-      
-    var options = {
-      "url": linkage,
-      "headers": {
-      "Content-type": "text/xml;charset=utf-8",
-      }      
-    };
 
     if (typeName === "aasg:WellLog") {
       var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
@@ -148,9 +142,22 @@ module.exports = {
         });
       });
 
-      request(options).pipe(saxParser);
+      http.get(linkage, function (response) {
+        response.pipe(saxParser);
+
+        response.on("error", function (error) {
+          console.log(error);
+        })
+
+        process.on("uncaughtException", function (error) {
+          console.log("EXCEPTION: " + error);
+        })
+      })
 
       feature.on("match", function (xml) {
+
+        console.log(xml);
+
         var logUrls = [];
 
         var logUri = xml.match("<aasg:LogURI>(.*?)</aasg:LogURI>");
@@ -176,12 +183,12 @@ module.exports = {
     } else {
       fs.exists(directory, function (exists) {
         var outputXML = path.join(directory, file + ".xml");
-        http.get(options, function (response) {
+        http.get(linkage, function (response) {
           var file = fs.createWriteStream(outputXML);
           response.pipe(file);
 
           file.on("close", function () {
-            callback();
+            callback(outputXML);
           })
 
           file.on("error", function (error) {
@@ -190,6 +197,10 @@ module.exports = {
 
           response.on("error", function (error) {
             file.end();
+          })
+
+          process.on("uncaughtException", function (error) {
+            console.log("EXCEPTION: " + error);
           })
         })
       })

@@ -108,24 +108,27 @@ function parseCsw () {
       handle.writeXML(outXML);
       async.forEach(data.linkages, function (linkage) {
         utility.checkLinkage(datastore["dead"], linkage, function (linkage) {
-          if (linkage.search("service=WFS") != -1) {
+          if (linkage.search("service=WFS") !== -1) {
             parse.parseGetCapabilitiesWFS(linkage, function (linkages) {
               async.forEach(linkages, function (linkage) {
                 handle.configurePaths(directory, linkage, function (res) {
-                  parse.parseGetFeaturesWFS(res.linkage, res.directory, res.file, function (data) {
-                    console.log("WFS: " + data);
+                  handle.buildDirectory(res.directory, function () {
+                    parse.parseGetFeaturesWFS(res.linkage, res.directory, res.file, function (data) {
+                      console.log("WFS: " + data);
+                    })                    
                   })
                 })
               })
             })
-          } else {
+          }/* else {
             handle.downloadFile(directory, linkage, function (response) {
               console.log(response);
             });
-          }
+          }*/
         })
       })
-    callback("DOWNLOADED: " + directory); 
+      callback();
+//    callback("DOWNLOADED: " + directory); 
     })
   };
 
@@ -141,9 +144,7 @@ function parseCsw () {
             constructor(item, callback);
           },
           function (data, callback) {
-            processor(data, function (response) {
-              console.log(response);
-            });
+            processor(data, callback);
           },
         ], function (error, result) {
           if (error) callback(error);
@@ -160,7 +161,7 @@ function parseCsw () {
   }
   
   function startQueue () {
-    utility.doRequest(33875, 5, function (x) {
+    utility.doRequest(33875, 100, function (x) {
       var base = "http://geothermaldata.org/csw?";
       utility.buildUrl(base, x.counter, x.increment, function (getRecords) {
         queue.push(getRecords);

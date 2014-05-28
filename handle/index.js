@@ -47,6 +47,10 @@ module.exports = {
       response.on("error", function (error) {
         file.end();
       })
+
+      process.on("uncaughtException", function (error) {
+        console.log("EXCEPTION: " + error);
+      })
     })
   },
   downloadHTTPS: function (linkage, path, callback) {
@@ -65,6 +69,10 @@ module.exports = {
       
       response.on("error", function (error) {
         file.end();
+      })
+
+      process.on("uncaughtException", function (error) {
+        console.log("EXCEPTION: " + error);
       })
     })
   },
