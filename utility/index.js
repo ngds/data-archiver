@@ -1,6 +1,7 @@
 var fs = require("fs");
 var path = require("path");
 var url = require("url");
+var _ = require("underscore");
 
 module.exports = {
   buildDirs: function (base) {
@@ -38,6 +39,18 @@ module.exports = {
         + outputSchema + "&typeNames=" + typeNames + "&version=" + version
     })
   },
+  checkLinkage: function (datastore, linkage, callback) {
+    var host = url.parse(linkage)["host"];
+    var dead = _.map(datastore, function (record) {
+      if (record) {
+        return record["linkage"];        
+      }
+    });
+
+    if (_.indexOf(dead, host) === -1) {
+      callback(linkage);
+    }
+  },
   doRequest: function (total, increment, callback) {
     this._scaleRequest(total, increment, function (response) {
       var counter = 1;
@@ -49,10 +62,6 @@ module.exports = {
       }
       while (counter < holder) {
         counter += increment;
-        callback({"counter": counter, "increment": increment});
-      }
-      if (counter === holder) {
-        increment = (last - holder);
         callback({"counter": counter, "increment": increment});
       }
     })

@@ -12,82 +12,113 @@ var async = require("async");
 module.exports = {
   // Write out XML data held in-memory to a text file.
   writeXML: function (outputXml, data) { 
-    fs.writeFile(outputXml, data, function (error) {
-      if (error) {
-        console.log(error);
-      } else {
-        console.log("FILE SAVED: " + outputXml);
-      }
-    });     
-  },
-  writeLinkage: function (logFile, linkage) {
-    var date = new Date().toISOString();
-    var text = linkage + "," + date + ",\n";
-    fs.appendFile(logFile, text, function (error) {
-      if (error) throw error;
-    })
+    fs.writeFileSync(outputXml, data);
   },
   linkageLogger: function (data, log, callback) {
-    console.log(data);
-    callback();
+    fs.writeFile(log, data, function (error) {
+      if (error)
+        callback(error);
+      callback();
+    })
   },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
-  downloadFile: function (directory, file, linkage, callback) {
-    var directory = directory.replace(/(\r\n|\n|\r)/gm,"");
-    var file = file.replace(/(\r\n|\n|\r)/gm,"");
-
-    this.buildDirectory(directory, function (error) {
-
-      fs.exists(directory, function (exists) {
-        if (exists) {
-
-          var outputPath = path.join(directory, file);
-              
-          // Write FTP files to local outputs folder
-          if (linkage.indexOf("ftp") === 0) {
-            ftp.get(linkage, outputPath, function (err, res) {
-              if (err) return console.log(err, res);
-              callback(null);
-            })
-          } 
-          // Write HTTP files to local outputs folder
-          else if (linkage.indexOf("http") === 0 && 
-                   linkage.indexOf("https") === -1) {
-            var download = function (url, destination, callback) {
-              var file = fs.createWriteStream(destination);
-              var request = http.get(url, function (response) {
-                response.pipe(file);
-                file.on("finish", function () {
-                  file.close(callback);
-                  callback(null);
-                })
-              })
-              request.on("error", function (error) {
-                callback(error);
-              })
-            }
-            download(linkage, outputPath);
-          } 
-          // Write HTTPS files to local outputs folder
-          else if (linkage.indexOf("https") === 0) {
-            var download = function (url, destination, callback) {
-              var file = fs.createWriteStream(destination);
-              var request = https.get(url, function (response) {
-                response.pipe(file);
-                file.on("finish", function () {
-                  file.close(callback);
-                  callback(null);
-                })
-              })
-              request.on("error", function (error) {
-                callback(error);
-              })
-            }
-            download(linkage, outputPath);
-          }
-        }
+  downloadFTP: function (linkage, path, callback) {
+    ftp.get(linkage, path, function (err, res) {
+      if (err) return callback(err, res);
+      if (typeof callback === "function")
+        callback("DOWNLOADED FTP");
       })
+  },
+  downloadHTTP: function (linkage, path, callback) {
+    http.get(linkage, function (response) {
+
+      var file = fs.createWriteStream(path);
+      response.pipe(file);
+
+      file.on("close", function () {
+        callback();
+      });
+
+      file.on("error", function (error) {
+        callback(error);
+      });
+
+      response.on("error", function (error) {
+        file.end();
+      })
+
+      process.on("uncaughtException", function (error) {
+        console.log("EXCEPTION: " + error);
+      })
+    })
+  },
+  downloadHTTPS: function (linkage, path, callback) {
+    https.get(linkage, function (response) {
+
+      var file = fs.createWriteStream(path);
+      response.pipe(file);
+
+      file.on("close", function () {
+        callback();
+      });
+
+      file.on("error", function (error) {
+        callback(error);
+      });
+      
+      response.on("error", function (error) {
+        file.end();
+      })
+
+      process.on("uncaughtException", function (error) {
+        console.log("EXCEPTION: " + error);
+      })
+    })
+  },
+  downloadFile: function (directory, linkage, callback) {
+    
+    console.log(directory, linkage)
+    
+    var module = this;
+    this.configurePaths(directory, linkage, function (res) {
+
+      var directory = res.directory.replace(/(\r\n|\n|\r)/gm,"");
+      var file = res.file.replace(/(\r\n|\n|\r)/gm,"");
+      var outputPath = path.join(directory, file);
+
+      module.buildDirectory(directory, function (error) {
+
+        fs.exists(directory, function (exists) {
+          if (exists) {                
+            // Write FTP files to local outputs folder
+            if (res.linkage.indexOf("ftp") === 0) {
+              module.downloadFTP(res.linkage, outputPath, function () {
+                if (typeof callback === "function") {
+                  callback("DOWNLOADED FTP");
+                }
+              })
+            } 
+            // Write HTTP files to local outputs folder
+            else if (res.linkage.indexOf("http") === 0 && 
+                     res.linkage.indexOf("https") === -1) {
+              module.downloadHTTP(res.linkage, outputPath, function () {
+                if (typeof callback === "function") {
+                  callback("DOWNLOADED HTTP");
+                }
+              })
+            }
+            // Write HTTPS files to local outputs folder
+            else if (res.linkage.indexOf("https") === 0) {
+              module.downloadHTTPS(res.linkage, outputPath, function () {
+                if (typeof callback === "function") {
+                  callback("DOWNLOADED HTTPS");
+                }
+              })
+            }
+          }
+        })
+      })      
     })
   },
   // Given an FTP or HTTP URL, ping it to see if the URL is alive.  If it is, 
@@ -169,6 +200,7 @@ module.exports = {
 
     zipped.on("close", function () {
       console.log("Directory has been archived");
+      callback();
     });
 
     archive.on("error", function (error) {
@@ -177,22 +209,10 @@ module.exports = {
 
     archive.pipe(zipped);
     archive.bulk([
-      {expand: true, cwd: uncompressed, src: ["*"]}
+      {expand: true, cwd: uncompressed, src: ["**"]}
     ]);
     archive.finalize();
   },
-  downloadLinkage: function (linkage, directory, dead) {
-    var module = this;
-    var parsedUrl = url.parse(linkage);
-    var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
-    if (_.indexOf(dead, host) !== -1  && linkage !== "" && linkage !== null) {
-      module.configurePaths(directory, linkage, function (res) {
-        module.downloadFile(res.directory, res.file, res.linkage, function (error) {
-          if (error) console.log(error);
-        });
-      })    
-    }
-  }
 };
 
 

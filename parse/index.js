@@ -61,6 +61,8 @@ module.exports = {
       })
       .pipe(saxParser);
 
+    var data = [];
+
     fullRecord.on("match", function (xml) {
       var idReg = new RegExp(/<gmd:fileIdentifier><gco:CharacterString>(.*?)<\/gco:CharacterString><\/gmd:fileIdentifier>/g);
       var urlReg = new RegExp(/<gmd:URL>(.*?)<\/gmd:URL>/g);
@@ -73,61 +75,25 @@ module.exports = {
         linkages.push(match[1]);
       };
 
-      if (typeof callback === "function") {
-        callback({
-          "fileId": fileId,
-          "linkages": linkages,
-          "fullRecord": xml,
-        })
-      }
+      data.push({
+        "fileId": fileId,
+        "linkages": linkages,
+        "fullRecord": xml,
+      })
     });
+
+    fullRecord.on("end", function () {
+      callback(data);
+    })
   },
   // Given an array of linkage URLs, pull out the WFS getCapabilities URLs and 
   // ping them.  If URL returns 200, then pull out the getFeatures service 
   // endpoint and the typeNames.  If the typeName matches 'aasg:WellLog', then 
   // construct a getFeatures URL and pass it to the callback.
   parseGetCapabilitiesWFS: function (linkage, callback) {
-    if (linkage.search("service=WFS") != -1) {
-      var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
-      var capabilities = new saxpath.SaXPath(saxParser, "/wfs:WFS_Capabilities");
-      
-      var options = {
-        "url": linkage,
-        "headers": {
-        "Content-type": "text/xml;charset=utf-8",
-        }      
-      };
+    var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
+    var capabilities = new saxpath.SaXPath(saxParser, "/wfs:WFS_Capabilities");
 
-      request(linkage, function (error, response) {
-        if (!error && response.statusCode == 200) {
-          request(options).pipe(saxParser);
-          capabilities.on("match", function (xml) {
-            var doc = new dom().parseFromString(xml);
-            var httpGetPath = xpath(doc, "//ows:OperationsMetadata/ows:Ope" +
-                                         "ration/ows:DCP/ows:HTTP/ows:Get/" +
-                                         "@xlink:href");
-            var typeNamePath = xpath(doc, "//wfs:FeatureTypeList/wfs:Featu" +
-                                          "reType/wfs:Name");
-            var endpoint = httpGetPath[0].value;
-            
-            var getFeatures = _.map(typeNamePath, function (typeName) {
-              return endpoint + "request=GetFeature&service=WFS&version=" +
-                     "2.0.0&typeNames=" + typeName.firstChild.data;
-            });
-            callback(getFeatures);
-          })
-        }
-      });
-    }
-  },
-  // Given a WFS getFeatures URL, stream stream out all of the data associated 
-  // with the parent tag specified in the 'feature' variable.  On each match,
-  // hit the xml with some regular expressions for pulling out URIs and URLs and
-  // pass that data to the callback.
-  parseGetFeaturesWFS: function (directory, file, linkage) {
-    var urlQuery = url.parse(linkage)["query"];
-    var typeName = querystring.parse(urlQuery)["typeNames"];
-      
     var options = {
       "url": linkage,
       "headers": {
@@ -135,91 +101,139 @@ module.exports = {
       }      
     };
 
-    if (typeName === "aasg:WellLog") {
-      var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
-      var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
-    
-      saxParser.on("error", function (error) {
-        callback({
-          "link": link,
-          "error": error,
-        });
-      });
-
-      request(options).pipe(saxParser);
-
-      feature.on("match", function (xml) {
-        var logUrls = [];
-
-        var logUri = xml.match("<aasg:LogURI>(.*?)</aasg:LogURI>");
-        if (logUri) logUrls.push(logUri[1]);
-        
-        var wellUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>");
-        if (wellUri) logUrls.push(wellUri[1]);
-        
-        var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>");
-        if (fileUrl) logUrls.push(fileUrl[1]);
-
-        var lasUrl = xml.match("<aasg:LASFileURL>(.*?)</aasg:LASFileURL>");
-        if (lasUrl) logUrls.push(lasUrl[1]);
-
-        if (typeof callback === "function") {
-
-          callback({
-            "urls": logUrls,
-            "xml": xml,
-          })
-        }
-      })
-    } 
-    else {
-      fs.exists(directory, function (exists) {
-        var outputXML = path.join(directory, file + ".xml");
-        console.log(outputXML);
-        request(options)
-          .on("response", function () {})
-          .on("error", function () {
-            console.log("ERROR")
-          })
-          .pipe(fs.createWriteStream(outputXML));        
-      })
-    }
+    request(linkage, function (error, response) {
+      if (!error && response.statusCode == 200) {
+        request(options).pipe(saxParser);
+        capabilities.on("match", function (xml) {
+          var doc = new dom().parseFromString(xml);
+          var httpGetPath = xpath(doc, "//ows:OperationsMetadata/ows:Ope" +
+                                       "ration/ows:DCP/ows:HTTP/ows:Get/" +
+                                       "@xlink:href");
+          var typeNamePath = xpath(doc, "//wfs:FeatureTypeList/wfs:Featu" +
+                                        "reType/wfs:Name");
+          var endpoint = httpGetPath[0].value;
+          
+          var getFeatures = _.map(typeNamePath, function (typeName) {
+            return endpoint + "request=GetFeature&service=WFS&version=" +
+                   "2.0.0&typeNames=" + typeName.firstChild.data;
+          });
+          callback(getFeatures);
+        })
+      }
+    });
   },
-  parseOGC: function (directory, linkage) {
-    var module = this;
-    module.parseGetCapabilitiesWFS(linkage, function (getRecords) {
-      async.each(getRecords, function (getRecord) {
-        handle.configurePaths(directory, getRecord, function (response) {
-          handle.buildDirectory(response.directory, function () {
-            var dir = response.directory;
-            var file = response.file;
-            var linkage = response.linkage;
-            module.parseGetFeaturesWFS(dir, file, linkage, function (data) {
-              console.log(data);
+  parseWellLogsWFS: function (linkage, directory, callback) {
+    var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
+    var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
+    
+    saxParser.on("error", function (error) {
+      callback({
+        "link": linkage,
+        "error": error,
+      });
+    });
+
+    http.get(linkage, function (response) {
+      response.pipe(saxParser);
+
+      response.on("error", function (error) {
+        console.log(error);
+      })
+
+      process.on("uncaughtException", function (error) {
+        console.log("EXCEPTION: " + error + linkage);
+      })
+    })
+
+    feature.on("match", function (xml) {
+      var logInfo = {};
+      logInfo["linkages"] = [];
+
+      var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>");
+      var boreUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>");
+      var logType = xml.match("<aasg:LogTypeTerm>(.*?)</aasg:LogTypeTerm>");
+
+      if (fileUrl) {
+        fileUrl = fileUrl[1];
+        var illegalChars = [",", ";", "|"];
+        _.each(illegalChars, function (char) {
+          if (fileUrl.indexOf(char) > -1) {
+            files = fileUrl.split(char);
+            _.each(files, function (file) {
+              logInfo["linkages"].push(file);
             })
+          } else {
+            logInfo["linkages"].push(fileUrl);
+          }
+          var parsedUrl = url.parse(logInfo["linkages"][0]);
+          logInfo["host"] = parsedUrl["hostname"].replace(/[^a-zA-Z0-9_.-]/gim, "_");            
+        });
+        var filePath = fileUrl.split("/").pop();
+        var fileSplit = filePath.split(".")[0];
+        logInfo["recordId"] = fileSplit;
+        logInfo["xmlId"] = fileSplit + ".xml";
+      } else if (boreUri) {
+        boreUri = boreUri[1];
+        logType = typeof logType[1] !== "undefined" ? logType : "";
+        if (boreUri.indexOf("uri-gin") > -1) {
+          var urlPath = boreUri.split("uri-gin")[1];
+          logInfo["recordId"] = urlPath.replace("/", "_") + "_" + logType;
+          logInfo["xmlId"] = urlPath.replace("/", "_") + "_" + logType + ".xml";
+        }
+      }
+
+      if (typeof callback === "function") {
+        callback({
+          "wfs": linkage,
+          "dir": directory,
+          "linkages": _.uniq(logInfo["linkages"]),
+          "xmlId": logInfo["xmlId"],
+          "id": logInfo["recordId"],
+          "host": logInfo["host"],
+          "xml": xml,
+        })
+      }
+    }) 
+  },
+  parseGetFeaturesWFS: function (linkage, directory, file, callback) {
+    fs.exists(directory, function (exists) {
+      var outputXML = path.join(directory, file + ".xml");
+      http.get(linkage, function (response) {
+        var file = fs.createWriteStream(outputXML);
+        response.pipe(file);
+
+        file.on("close", function () {
+          callback(outputXML);
+        })
+
+        file.on("error", function (error) {
+          callback(error);
+        })
+
+        response.on("error", function (error) {
+          file.end();
+        })
+
+        process.on("uncaughtException", function (error) {
+          console.log("EXCEPTION: " + error + linkage);
+        })
+      })
+    })
+  },
+  parseWellLogs: function (data) {
+    var topDir = path.join(data["dir"], data["host"]);
+    handle.buildDirectory(topDir, function () {
+      var recordDir = path.join(topDir, data["id"]);
+      handle.buildDirectory(recordDir, function () {
+        var outputXML = path.join(recordDir, data["xmlId"]);
+        handle.writeXML(outputXML, data["xml"]);
+        console.log(data["linkages"]);
+        async.forEach(data["linkages"], function (linkage) {
+          handle.downloadFile(recordDir, linkage, function (response) {
+            console.log(response);
           })
         })
       })
     })
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
