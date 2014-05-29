@@ -117,117 +117,123 @@ module.exports = {
             return endpoint + "request=GetFeature&service=WFS&version=" +
                    "2.0.0&typeNames=" + typeName.firstChild.data;
           });
-          console.log(getFeatures);
           callback(getFeatures);
         })
       }
     });
   },
-  // Given a WFS getFeatures URL, stream stream out all of the data associated 
-  // with the parent tag specified in the 'feature' variable.  On each match,
-  // hit the xml with some regular expressions for pulling out URIs and URLs and
-  // pass that data to the callback.
-  parseGetFeaturesWFS: function (linkage, directory, file, callback) {
-    var urlQuery = url.parse(linkage)["query"];
-    var typeName = querystring.parse(urlQuery)["typeNames"];
-
-    if (typeName === "aasg:WellLog") {
-      var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
-      var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
+  parseWellLogsWFS: function (linkage, directory, callback) {
+    var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
+    var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
     
-      saxParser.on("error", function (error) {
-        callback({
-          "link": link,
-          "error": error,
-        });
+    saxParser.on("error", function (error) {
+      callback({
+        "link": linkage,
+        "error": error,
       });
+    });
 
+    http.get(linkage, function (response) {
+      response.pipe(saxParser);
+
+      response.on("error", function (error) {
+        console.log(error);
+      })
+
+      process.on("uncaughtException", function (error) {
+        console.log("EXCEPTION: " + error + linkage);
+      })
+    })
+
+    feature.on("match", function (xml) {
+      var logInfo = {};
+      logInfo["linkages"] = [];
+
+      var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>");
+      var boreUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>");
+      var logType = xml.match("<aasg:LogTypeTerm>(.*?)</aasg:LogTypeTerm>");
+
+      if (fileUrl) {
+        fileUrl = fileUrl[1];
+        var illegalChars = [",", ";", "|"];
+        _.each(illegalChars, function (char) {
+          if (fileUrl.indexOf(char) > -1) {
+            files = fileUrl.split(char);
+            _.each(files, function (file) {
+              logInfo["linkages"].push(file);
+            })
+          } else {
+            logInfo["linkages"].push(fileUrl);
+          }
+          var parsedUrl = url.parse(logInfo["linkages"][0]);
+          logInfo["host"] = parsedUrl["hostname"].replace(/[^a-zA-Z0-9_.-]/gim, "_");            
+        });
+        var filePath = fileUrl.split("/").pop();
+        var fileSplit = filePath.split(".")[0];
+        logInfo["recordId"] = fileSplit;
+        logInfo["xmlId"] = fileSplit + ".xml";
+      } else if (boreUri) {
+        boreUri = boreUri[1];
+        logType = typeof logType[1] !== "undefined" ? logType : "";
+        if (boreUri.indexOf("uri-gin") > -1) {
+          var urlPath = boreUri.split("uri-gin")[1];
+          logInfo["recordId"] = urlPath.replace("/", "_") + "_" + logType;
+          logInfo["xmlId"] = urlPath.replace("/", "_") + "_" + logType + ".xml";
+        }
+      }
+
+      if (typeof callback === "function") {
+        callback({
+          "wfs": linkage,
+          "dir": directory,
+          "linkages": _.uniq(logInfo["linkages"]),
+          "xmlId": logInfo["xmlId"],
+          "id": logInfo["recordId"],
+          "host": logInfo["host"],
+          "xml": xml,
+        })
+      }
+    }) 
+  },
+  parseGetFeaturesWFS: function (linkage, directory, file, callback) {
+    fs.exists(directory, function (exists) {
+      var outputXML = path.join(directory, file + ".xml");
       http.get(linkage, function (response) {
-        response.pipe(saxParser);
+        var file = fs.createWriteStream(outputXML);
+        response.pipe(file);
+
+        file.on("close", function () {
+          callback(outputXML);
+        })
+
+        file.on("error", function (error) {
+          callback(error);
+        })
 
         response.on("error", function (error) {
-          console.log(error);
+          file.end();
         })
 
         process.on("uncaughtException", function (error) {
-          console.log("EXCEPTION: " + error);
+          console.log("EXCEPTION: " + error + linkage);
         })
       })
-
-      feature.on("match", function (xml) {
-
-        console.log(xml);
-
-        var logInfo = {};
-        logInfo["linkages"] = [];
-        var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>");
-
-        if (fileUrl) {
-          fileUrl = fileUrl[1];
-          var illegalChars - [",", ";", "|"];
-          _.each(illegalChars, function (char) {
-            if (fileUrl.indexOf(char) > -1) {
-              files = fileUrl.split(char);
-              _.each(files, function (file) {
-                logInfo["linkages"].push(file);
-              })
-            } else {
-              logInfo["linkages"].push(fileUrl);
-            }            
-          });
-
-          var filePath = fileUrl.split("/").pop();
-          var fileSplit = filePath.split(".")[1];
-          logInfo["fileId"] = fileSplit + ".xml";
-        }
-
-        if (typeof callback === "function") {
-
-          callback({
-            "urls": logUrls,
-            "xml": xml,
-          })
-        }
-      })
-    } else {
-      fs.exists(directory, function (exists) {
-        var outputXML = path.join(directory, file + ".xml");
-        http.get(linkage, function (response) {
-          var file = fs.createWriteStream(outputXML);
-          response.pipe(file);
-
-          file.on("close", function () {
-            callback(outputXML);
-          })
-
-          file.on("error", function (error) {
-            callback(error);
-          })
-
-          response.on("error", function (error) {
-            file.end();
-          })
-
-          process.on("uncaughtException", function (error) {
-            console.log("EXCEPTION: " + error);
-          })
-        })
-      })
-    }
+    })
   },
   parseWellLogs: function (data) {
-
+    var topDir = path.join(data["dir"], data["host"]);
+    handle.buildDirectory(topDir, function () {
+      var recordDir = path.join(topDir, data["id"]);
+      handle.buildDirectory(recordDir, function () {
+        var outputXML = path.join(recordDir, data["xmlId"]);
+        handle.writeXML(outputXML, data["xml"]);
+        console.log(data["linkages"]);
+        async.forEach(data["linkages"], function (linkage) {
+          handle.downloadFile(recordDir, linkage, function (response) {
+            console.log(response);
+          })
+        })
+      })
+    })
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-

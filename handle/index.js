@@ -77,6 +77,9 @@ module.exports = {
     })
   },
   downloadFile: function (directory, linkage, callback) {
+    
+    console.log(directory, linkage)
+    
     var module = this;
     this.configurePaths(directory, linkage, function (res) {
 

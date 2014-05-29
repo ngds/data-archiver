@@ -8,9 +8,7 @@ var path = require("path");
 var url = require("url");
 var fs = require("fs");
 var _ = require("underscore");
-
-var stream = require("stream").Stream();
-
+var querystring = require("querystring");
 
 var argv = require("yargs")
   .usage("Command line utility for archiving NGDS data on Amazon S3")
@@ -113,27 +111,36 @@ function parseCsw () {
               async.forEach(linkages, function (linkage) {
                 handle.configurePaths(directory, linkage, function (res) {
                   handle.buildDirectory(res.directory, function () {
-                    parse.parseGetFeaturesWFS(res.linkage, res.directory, res.file, function (data) {
-                      
-                    })                    
+                    var urlQuery = url.parse(res.linkage)["query"];
+                    var typeName = querystring.parse(urlQuery)["typeNames"];
+                    if (typeName === "aasg:WellLog") {
+                      console.log("GOT A WELL LOG WFS");
+                      parse.parseWellLogsWFS(res.linkage, res.directory, function (response) {
+                        parse.parseWellLogs(response);
+                      })
+                    }
+
+                    if (typeName !== "aasg:WellLog") {
+                      parse.parseGetFeaturesWFS(res.linkage, res.directory, res.file, function (data) {
+                        
+                      })
+                    }                   
                   })
                 })
               })
             })
-          }/* else {
+          } else {
             handle.downloadFile(directory, linkage, function (response) {
               console.log(response);
             });
-          }*/
+          }
         })
       })
-      callback();
-//    callback("DOWNLOADED: " + directory); 
+    callback("DOWNLOADED: " + directory); 
     })
   };
 
   var queue = async.queue(function (getRecordUrl, callback) {
-    console.log(getRecordUrl);
     parse.parseCsw(getRecordUrl, function (data) {
       async.each(data, function (item) {
         async.waterfall([
@@ -144,7 +151,9 @@ function parseCsw () {
             constructor(item, callback);
           },
           function (data, callback) {
-            processor(data, callback);
+            processor(data, function (response) {
+              console.log(response);
+            });
           },
         ], function (error, result) {
           if (error) callback(error);
