@@ -200,6 +200,7 @@ module.exports = {
 
     zipped.on("close", function () {
       console.log("Directory has been archived");
+      callback();
     });
 
     archive.on("error", function (error) {
@@ -208,7 +209,7 @@ module.exports = {
 
     archive.pipe(zipped);
     archive.bulk([
-      {expand: true, cwd: uncompressed, src: ["*"]}
+      {expand: true, cwd: uncompressed, src: ["**"]}
     ]);
     archive.finalize();
   },
