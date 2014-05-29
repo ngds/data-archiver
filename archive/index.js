@@ -1,7 +1,8 @@
-var aws = require('aws-sdk');
+var aws = require("aws-sdk");
 var _ = require("underscore");
+var fs = require("fs");
 
-aws.config.loadFromPath('./awsConfig.json');
+aws.config.loadFromPath("./awsConfig.json");
 var glacier = new aws.Glacier();
 
 module.exports = {
@@ -32,7 +33,17 @@ module.exports = {
       }
     });
   },
-  uploadToGlacier: function (vault, callback) {
-    var buffer = new Buffer(2.5 * 1024 * 1024);
+  uploadToGlacier: function (archive, vault, callback) {
+    var file = fs.readFileSync(archive);
+
+    var options = {
+      vaultName: vault,
+      body: file,
+    }
+
+    glacier.uploadArchive(options, function (error, response) {
+      if (error) callback(error);
+      else callback(response.archiveId)
+    })
   },
 };

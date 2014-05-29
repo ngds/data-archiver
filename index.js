@@ -43,6 +43,7 @@ function parseCsw () {
     "dead": path.join(dirs["logs"], "dead-linkages.csv"),
     "unique": path.join(dirs["logs"], "unique-linkages.csv"),
   }
+  var vault = "ngds-archive";
 
   function pinger (data, store, callback) {
     async.forEach(data.linkages, function (linkage) {
@@ -152,7 +153,21 @@ function parseCsw () {
 
   function zipper (directory, archived, callback) {
     handle.compressDirectory(directory, archived, function () {
-      callback(null);      
+      callback(null, archived);      
+    })
+  }
+
+  function vault (callback) {
+    archiver.checkGlacierVaults(vault, function (error, response) {
+      if (error) callback(error);
+      else callback(null);
+    });    
+  }
+
+  function iceberg (archived, callback) {
+    archiver.uploadToGlacier(archived, vault, function (error, response) {
+      if (error) callback(error);
+      else callback(response);
     })
   }
 
@@ -160,6 +175,11 @@ function parseCsw () {
     parse.parseCsw(getRecordUrl, function (data) {
       async.each(data, function (item) {
         async.waterfall([
+          /*
+          function (callback) {
+            vault(callback);
+          },
+          */
           function (callback) {
             pinger(item, datastore, callback);
           },
@@ -172,6 +192,11 @@ function parseCsw () {
           function (directory, archive, callback) {
             zipper(directory, archive, callback);
           },
+          function (archived, callback) {
+            iceberg(archived, function (response) {
+              console.log(response);
+            })
+          }
         ], function (error, result) {
           if (error) callback(error);
         });
@@ -197,17 +222,6 @@ function parseCsw () {
 
   startQueue();
 }
-
-
-
-function doArchive () {
-  var vault = "ngds-archive";
-  archiver.checkGlacierVaults(vault, function (error, response) {
-    if (error) console.log(error);
-    else console.log(response);
-  });
-}
-
 
 
 
