@@ -3,6 +3,7 @@
 var async = require("async");
 var parse = require("./parse");
 var handle = require("./handle");
+var archiver = require("./archive");
 var utility = require("./utility");
 var path = require("path");
 var url = require("url");
@@ -15,10 +16,14 @@ var argv = require("yargs")
 
   .alias("p", "parse")
   .describe("Parse a CSW")
+
+  .alias("a", "archive")
+  .describe("Archive in AWS Glacier")
   .argv;
 
 var cmdQueue = [];
 if (argv.parse) cmdQueue.push(parseCsw);
+if (argv.archive) cmdQueue.push(doArchive);
 
 async.series(cmdQueue);
 
@@ -192,3 +197,38 @@ function parseCsw () {
 
   startQueue();
 }
+
+
+
+function doArchive () {
+  var vault = "ngds-archive";
+  archiver.checkGlacierVaults(vault, function (error, response) {
+    if (error) console.log(error);
+    else console.log(response);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
