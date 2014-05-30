@@ -9,7 +9,7 @@ module.exports = {
     dirs["out"] = path.join(base, "outputs");
     dirs["record"] = path.join(dirs["out"], "records");
     dirs["archive"] = path.join(dirs["out"], "archive");
-    dirs["logs"] = path.join(dirs["out"], "logs");
+    dirs["status"] = path.join(dirs["out"], "status");
 
     for (var key in dirs) {
       if (fs.existsSync(dirs[key])) {

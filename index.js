@@ -16,9 +16,6 @@ var argv = require("yargs")
 
   .alias("p", "parse")
   .describe("Parse a CSW")
-
-  .alias("a", "archive")
-  .describe("Archive in AWS Glacier")
   .argv;
 
 var cmdQueue = [];
@@ -38,11 +35,7 @@ function parseCsw () {
   var datastore = new DataStore();
   var base = argv.out ? argv.out : path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
-  var logs = {
-    "status": path.join(dirs["logs"], "linkage-status.csv"),
-    "dead": path.join(dirs["logs"], "dead-linkages.csv"),
-    "unique": path.join(dirs["logs"], "unique-linkages.csv"),
-  }
+
   var vault = "ngds-archive";
 
   function pinger (data, store, callback) {
@@ -142,7 +135,6 @@ function parseCsw () {
             */
           } else {
             handle.downloadFile(directory, linkage, function (response) {
-              console.log(response);
               callback(null, directory, archived);
             });
           }
