@@ -4,6 +4,13 @@ var url = require("url");
 var _ = require("underscore");
 
 module.exports = {
+  datastore: function () {
+    var linkages = {};
+    linkages.unique = [];
+    linkages.status = [];
+    linkages.dead = [];
+    return linkages;
+  },
   buildDirs: function (base) {
     var dirs = {};
     dirs["out"] = path.join(base, "outputs");

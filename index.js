@@ -25,13 +25,7 @@ if (argv.archive) cmdQueue.push(doArchive);
 async.series(cmdQueue);
 
 function parseCsw () {
-  var DataStore = function () {
-    var linkages = {};
-    linkages.unique = [];
-    linkages.status = [];
-    linkages.dead = [];
-    return linkages;
-  };
+
   var datastore = new DataStore();
   var base = argv.out ? argv.out : path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
@@ -104,7 +98,7 @@ function parseCsw () {
     var directory = data["directory"];
     var archived = data["archived"];
     var outXML = data["outXML"];
-    handle.buildDirectory(directory, function () {
+    handle.buildDirectory(dirs, directory, function () {
       handle.writeXML(outXML);
       async.forEach(data.linkages, function (linkage) {
         utility.checkLinkage(datastore["dead"], linkage, function (linkage) {
@@ -134,7 +128,7 @@ function parseCsw () {
             })
             */
           } else {
-            handle.downloadFile(directory, linkage, function (response) {
+            handle.downloadFile(dirs, directory, linkage, function (response) {
               callback(null, directory, archived);
             });
           }
@@ -143,9 +137,9 @@ function parseCsw () {
     })
   };
 
-  function zipper (directory, archived, callback) {
-    handle.compressDirectory(directory, archived, function () {
-      callback(null, archived);      
+  function zipper (uncompressed, compressed, callback) {
+    handle.compressDirectory(dirs, uncompressed, compressed, function () {
+      callback(null, uncompressed, compressed);
     })
   }
 
@@ -156,14 +150,17 @@ function parseCsw () {
     });    
   }
 
-  function iceberg (archived, callback) {
-    archiver.uploadToGlacier(archived, vault, function (error, response) {
+  function iceberg (uncompressed, compressed, callback) {
+    archiver.uploadToGlacier(dirs, uncompressed, compressed, vault, function (error, response) {
       if (error) callback(error);
       else callback(response);
     })
   }
 
   var queue = async.queue(function (getRecordUrl, callback) {
+    
+    console.log(getRecordUrl);
+
     parse.parseCsw(getRecordUrl, function (data) {
       async.each(data, function (item) {
         async.waterfall([
@@ -184,8 +181,8 @@ function parseCsw () {
           function (directory, archive, callback) {
             zipper(directory, archive, callback);
           },
-          function (archived, callback) {
-            iceberg(archived, function (response) {
+          function (uncompressed, compressed, callback) {
+            iceberg(uncompressed, compressed, function (response) {
               console.log(response);
             })
           }

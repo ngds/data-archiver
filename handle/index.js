@@ -15,100 +15,55 @@ module.exports = {
   writeXML: function (outputXml, data) { 
     fs.writeFileSync(outputXml, data);
   },
-  // Check whether an externally hosted file is hosted on an HTTP server or an
-  // FTP server and then save it locally.
   downloadFTP: function (dirs, linkage, path, callback) {
     ftp.get(linkage, path, function (error, response) {
-      if (error) {
-        timber.log(dirs, "process_errors", error, function () {
-          timber.log(dirs, "process_all", error, function () {
-            callback(error);            
-          })          
-        })
-      }
+      if (error) callback(error);
       if (typeof callback === "function") {
-        var msg = "FTP Downloaded File: " + linkage " to " + path;
-        timber.log(dirs, "process_all", msg, function () {
-          callback();          
-        })
+        callback();
       }
-    }
+    })
   },
   downloadHTTP: function (dirs, linkage, path, callback) {
     http.get(linkage, function (response) {
-
       var file = fs.createWriteStream(path);
       response.pipe(file);
 
       file.on("close", function () {
-        var msg = "HTTP Downloaded File: " + linkage " to " + path;
-        timber.log(dirs, "process_all", msg, function () {
-          callback();          
-        })
+        callback();
       });
 
       file.on("error", function (error) {
-        timber.log(dirs, "process_errors", error, function () {
-          timber.log(dirs, "process_all", error, function () {
-            callback(error);            
-          })          
-        })
+        callback(error);
       });
 
       response.on("error", function (error) {
-        timber.log(dirs, "process_errors", error, function () {
-          timber.log(dirs, "process_all", error, function () {
-            callback(error);            
-          })          
-        })
+        file.end();
       })
 
       process.on("uncaughtException", function (error) {
-        var msg = "Uncaught Exception: " + error;
-        timber.log(dirs, "process_errors", msg, function () {
-          timber.log(dirs, "process_all", msg, function () {
-            callback(error);            
-          })          
-        })
+        console.log(error);
       })
     })
   },
   downloadHTTPS: function (dirs, linkage, path, callback) {
     https.get(linkage, function (response) {
-
       var file = fs.createWriteStream(path);
       response.pipe(file);
 
       file.on("close", function () {
-        var msg = "HTTPS Downloaded File: " + linkage " to " + path;
-        timber.log(dirs, "process_all", msg, function () {
-          callback();          
-        })
+        callback();
       });
 
       file.on("error", function (error) {
-        timber.log(dirs, "process_errors", error, function () {
-          timber.log(dirs, "process_all", error, function () {
-            callback(error);            
-          })          
-        })
+        callback(error);
       });
-      
+
       response.on("error", function (error) {
-        timber.log(dirs, "process_errors", error, function () {
-          timber.log(dirs, "process_all", error, function () {
-            callback(error);            
-          })          
-        })
+        file.end();
       })
 
       process.on("uncaughtException", function (error) {
-        var msg = "Uncaught Exception: " + error;
-        timber.log(dirs, "process_errors", msg, function () {
-          timber.log(dirs, "process_all", msg, function () {
-            callback(error);            
-          })          
-        })
+        console.log(error);
       })
     })
   },
@@ -120,13 +75,12 @@ module.exports = {
       var file = res.file.replace(/(\r\n|\n|\r)/gm,"");
       var outputPath = path.join(directory, file);
 
-      module.buildDirectory(directory, function (error) {
-
+      module.buildDirectory(dirs, directory, function (error) {
         fs.exists(directory, function (exists) {
           if (exists) {                
             // Write FTP files to local outputs folder
             if (res.linkage.indexOf("ftp") === 0) {
-              module.downloadFTP(res.linkage, outputPath, function (res) {
+              module.downloadFTP(dirs, res.linkage, outputPath, function (res) {
                 if (typeof callback === "function") {
                   callback();
                 }
@@ -135,7 +89,7 @@ module.exports = {
             // Write HTTP files to local outputs folder
             else if (res.linkage.indexOf("http") === 0 && 
                      res.linkage.indexOf("https") === -1) {
-              module.downloadHTTP(res.linkage, outputPath, function () {
+              module.downloadHTTP(dirs, res.linkage, outputPath, function () {
                 if (typeof callback === "function") {
                   callback();
                 }
@@ -143,7 +97,7 @@ module.exports = {
             }
             // Write HTTPS files to local outputs folder
             else if (res.linkage.indexOf("https") === 0) {
-              module.downloadHTTPS(res.linkage, outputPath, function () {
+              module.downloadHTTPS(dirs, res.linkage, outputPath, function () {
                 if (typeof callback === "function") {
                   callback();
                 }
@@ -154,9 +108,6 @@ module.exports = {
       })      
     })
   },
-  // Given an FTP or HTTP URL, ping it to see if the URL is alive.  If it is, 
-  // continue with business as usual.  If not, then write out the URL to a dead
-  // links file.
   pingUrl: function (linkage, callback) {
     var PingError = function (messages) {
       this.messages = messages;
@@ -188,8 +139,7 @@ module.exports = {
       callback(new PingError({"linkage": linkage, "time": time}));
     }
   },
-  // Function for building directories, and nothing more.
-  buildDirectory: function (path, callback) {
+  buildDirectory: function (dirs, path, callback) {
     fs.exists(path, function (exists) {
       if (exists) {
         callback();
@@ -203,8 +153,6 @@ module.exports = {
       }
     })
   },
-  // Given an array of linkages, parse them out, build some system paths and 
-  // pass the 'filePath' to the callback.
   configurePaths: function (directory, linkage, callback) {
     if (linkage) {
       var parsedUrl = url.parse(linkage);
@@ -227,12 +175,11 @@ module.exports = {
     }
   },
   // Given a path to a directory, compress the directory as a ZIP archive.
-  compressDirectory: function (uncompressed, compressed, callback) {
+  compressDirectory: function (dirs, uncompressed, compressed, callback) {
     var zipped = fs.createWriteStream(compressed);
     var archive = archiver("zip");
 
     zipped.on("close", function () {
-      console.log("Directory has been archived");
       callback();
     });
 

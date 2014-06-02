@@ -1,15 +1,13 @@
 var aws = require("aws-sdk");
 var _ = require("underscore");
-var fs = require("fs");
-
-aws.config.loadFromPath("./awsConfig.json");
-var glacier = new aws.Glacier();
+var fs = require("fs.extra");
+var timber = require("../timber");
 
 module.exports = {
-  checkGlacierVaults: function (vault, callback) {
+  checkGlacierVaults: function (dirs, vault, callback) {
     var module = this;
     glacier.listVaults(function (error, data) {
-      if (error) callback(error, error.stack);
+      if (error) callback(error);
       var vaultList = data["VaultList"];
       if (vaultList !== null) {
         var vaults = [];
@@ -21,20 +19,28 @@ module.exports = {
           callback(vault);
         } else {
           glacier.createVault({vaultName: vault}, function (error) {
-            if (error) callback(error);
-            else callback(vault);
+            if (error) {
+              callback(error);
+            } else {
+              callback(vault);          
+            }
           });
         }
       } else {
         glacier.createVault({vaultName: vault}, function (error) {
-          if (error) callback(error);
-          else callback(vault);
+          if (error) {
+            callback(error);
+          } else {
+            callback(vault);
+          }
         });
       }
     });
   },
-  uploadToGlacier: function (archive, vault, callback) {
-    var file = fs.readFileSync(archive);
+  uploadToGlacier: function (dirs, uncompressed, compressed, vault, callback) {
+    aws.config.loadFromPath("./awsConfig.json");
+    var glacier = new aws.Glacier();
+    var file = fs.readFileSync(compressed);
 
     var options = {
       vaultName: vault,
@@ -43,7 +49,19 @@ module.exports = {
 
     glacier.uploadArchive(options, function (error, response) {
       if (error) callback(error);
-      else callback(response.archiveId)
+      else 
+        var msg = "Uploaded " + compressed + " to Glacier: " + response.archiveId;
+        fs.rmrf(uncompressed, function (error) {
+          if (error) callback(error);
+          fs.exists(compressed, function (exists) {
+            if (exists) {
+              fs.unlink(compressed, function (error) {
+                if (error) callback(error);
+                else callback(msg);
+              })
+            }
+          })
+        })
     })
   },
 };

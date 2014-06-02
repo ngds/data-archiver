@@ -1,5 +1,6 @@
 var fs = require("fs");
 var _ = require("underscore");
+var path = require("path");
 
 module.exports = {
   log: function (dirs, output, message, callback) {
@@ -11,11 +12,12 @@ module.exports = {
       "process_errors": path.join(dirs["status"], "process_errors.txt"),
       "error_records": path.join(dirs["status"], "error_records.xml"),
       "error_id": path.join(dirs["status"], "error_id.csv"),
-    };
+    }
 
-    fs.appendFile(logs[output, message, function (error) {
-  		if error callback(error);
-  		else callback();
-  	})
+//    fs.appendFile(logs[output], message, function (error) {
+//  		if (error) callback(error);
+//  		else callback();
+//  	})
+    callback();
   }
 }
