@@ -46,18 +46,6 @@ module.exports = {
         + outputSchema + "&typeNames=" + typeNames + "&version=" + version
     })
   },
-  checkLinkage: function (datastore, linkage, callback) {
-    var host = url.parse(linkage)["host"];
-    var dead = _.map(datastore, function (record) {
-      if (record) {
-        return record["linkage"];        
-      }
-    });
-
-    if (_.indexOf(dead, host) === -1) {
-      callback(linkage);
-    }
-  },
   doRequest: function (total, increment, callback) {
     this._scaleRequest(total, increment, function (response) {
       var counter = 1;
