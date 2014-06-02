@@ -57,7 +57,7 @@ function parseCsw () {
     })
     callback(null);
   };
-
+/*
   function writeUrlStatus (store, logs, callback) {
     async.series([
       function (callback) {
@@ -84,7 +84,7 @@ function parseCsw () {
       callback(results);
     })
   }
-
+*/
   function constructor (item, callback) {
     var directory = path.join(dirs["record"], item.fileId);
     var archived = path.join(dirs["archive"], item.fileId + ".zip");

@@ -8,78 +8,111 @@ var _ = require("underscore");
 var url = require("url");
 var archiver = require("archiver");
 var async = require("async");
+var timber = require("../timber");
 
 module.exports = {
   // Write out XML data held in-memory to a text file.
   writeXML: function (outputXml, data) { 
     fs.writeFileSync(outputXml, data);
   },
-  linkageLogger: function (data, log, callback) {
-    fs.writeFile(log, data, function (error) {
-      if (error)
-        callback(error);
-      callback();
-    })
-  },
   // Check whether an externally hosted file is hosted on an HTTP server or an
   // FTP server and then save it locally.
-  downloadFTP: function (linkage, path, callback) {
-    ftp.get(linkage, path, function (err, res) {
-      if (err) return callback(err, res);
-      if (typeof callback === "function")
-        callback("DOWNLOADED FTP");
-      })
+  downloadFTP: function (dirs, linkage, path, callback) {
+    ftp.get(linkage, path, function (error, response) {
+      if (error) {
+        timber.log(dirs, "process_errors", error, function () {
+          timber.log(dirs, "process_all", error, function () {
+            callback(error);            
+          })          
+        })
+      }
+      if (typeof callback === "function") {
+        var msg = "FTP Downloaded File: " + linkage " to " + path;
+        timber.log(dirs, "process_all", msg, function () {
+          callback();          
+        })
+      }
+    }
   },
-  downloadHTTP: function (linkage, path, callback) {
+  downloadHTTP: function (dirs, linkage, path, callback) {
     http.get(linkage, function (response) {
 
       var file = fs.createWriteStream(path);
       response.pipe(file);
 
       file.on("close", function () {
-        callback();
+        var msg = "HTTP Downloaded File: " + linkage " to " + path;
+        timber.log(dirs, "process_all", msg, function () {
+          callback();          
+        })
       });
 
       file.on("error", function (error) {
-        callback(error);
+        timber.log(dirs, "process_errors", error, function () {
+          timber.log(dirs, "process_all", error, function () {
+            callback(error);            
+          })          
+        })
       });
 
       response.on("error", function (error) {
-        file.end();
+        timber.log(dirs, "process_errors", error, function () {
+          timber.log(dirs, "process_all", error, function () {
+            callback(error);            
+          })          
+        })
       })
 
       process.on("uncaughtException", function (error) {
-        console.log("EXCEPTION: " + error);
+        var msg = "Uncaught Exception: " + error;
+        timber.log(dirs, "process_errors", msg, function () {
+          timber.log(dirs, "process_all", msg, function () {
+            callback(error);            
+          })          
+        })
       })
     })
   },
-  downloadHTTPS: function (linkage, path, callback) {
+  downloadHTTPS: function (dirs, linkage, path, callback) {
     https.get(linkage, function (response) {
 
       var file = fs.createWriteStream(path);
       response.pipe(file);
 
       file.on("close", function () {
-        callback();
+        var msg = "HTTPS Downloaded File: " + linkage " to " + path;
+        timber.log(dirs, "process_all", msg, function () {
+          callback();          
+        })
       });
 
       file.on("error", function (error) {
-        callback(error);
+        timber.log(dirs, "process_errors", error, function () {
+          timber.log(dirs, "process_all", error, function () {
+            callback(error);            
+          })          
+        })
       });
       
       response.on("error", function (error) {
-        file.end();
+        timber.log(dirs, "process_errors", error, function () {
+          timber.log(dirs, "process_all", error, function () {
+            callback(error);            
+          })          
+        })
       })
 
       process.on("uncaughtException", function (error) {
-        console.log("EXCEPTION: " + error);
+        var msg = "Uncaught Exception: " + error;
+        timber.log(dirs, "process_errors", msg, function () {
+          timber.log(dirs, "process_all", msg, function () {
+            callback(error);            
+          })          
+        })
       })
     })
   },
-  downloadFile: function (directory, linkage, callback) {
-    
-    console.log(directory, linkage)
-    
+  downloadFile: function (dirs, directory, linkage, callback) {    
     var module = this;
     this.configurePaths(directory, linkage, function (res) {
 
@@ -93,9 +126,9 @@ module.exports = {
           if (exists) {                
             // Write FTP files to local outputs folder
             if (res.linkage.indexOf("ftp") === 0) {
-              module.downloadFTP(res.linkage, outputPath, function () {
+              module.downloadFTP(res.linkage, outputPath, function (res) {
                 if (typeof callback === "function") {
-                  callback("DOWNLOADED FTP");
+                  callback();
                 }
               })
             } 
@@ -104,7 +137,7 @@ module.exports = {
                      res.linkage.indexOf("https") === -1) {
               module.downloadHTTP(res.linkage, outputPath, function () {
                 if (typeof callback === "function") {
-                  callback("DOWNLOADED HTTP");
+                  callback();
                 }
               })
             }
@@ -112,7 +145,7 @@ module.exports = {
             else if (res.linkage.indexOf("https") === 0) {
               module.downloadHTTPS(res.linkage, outputPath, function () {
                 if (typeof callback === "function") {
-                  callback("DOWNLOADED HTTPS");
+                  callback();
                 }
               })
             }
@@ -142,7 +175,7 @@ module.exports = {
       });
     }
     // Ping HTTP links
-    else if (linkage.indexOf("http") === 0) {
+    else if (linkage.indexOf("http") === 0 || linkage.indexOf("https") === 0) {
       request(linkage, function (error, response) {
         if (!error && response.statusCode === 200) {
           callback(null, {"linkage": linkage, "time": time});
