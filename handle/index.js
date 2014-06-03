@@ -166,29 +166,22 @@ module.exports = {
   configurePaths: function (directory, linkage, callback) {
     var module = this;
     if (linkage) {
-      module.shouldDownload(linkage, function (error, response) {
-        if (response) {
-          console.log("YUUUUUUPPPPP")
-          var parsedUrl = url.parse(linkage);
-          // Remove any number of leading slashes (/)
-          var fileName = parsedUrl.path.replace(/^\/*/,"");
-          if (parsedUrl["hostname"] !== null && fileName.length > 0) {
-            // Replace with an underscore anything that is not a-z, 
-            // 'A-Z, 0-9, _, . or -
-            fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-            var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-            var filePath = path.join(directory, dirName);
+      var parsedUrl = url.parse(linkage);
+      // Remove any number of leading slashes (/)
+      var fileName = parsedUrl.path.replace(/^\/*/,"");
+      if (parsedUrl["hostname"] !== null && fileName.length > 0) {
+        // Replace with an underscore anything that is not a-z, 
+        // 'A-Z, 0-9, _, . or -
+      fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+        var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+        var filePath = path.join(directory, dirName);
 
-            callback({
-              "file": fileName,
-              "directory": filePath,
-              "linkage": linkage,
-            });      
-          }          
-        } else {
-          console.log("NOOOOOPPPPPEEEE")
-        }
-      })
+        callback({
+          "file": fileName,
+          "directory": filePath,
+          "linkage": linkage,
+        });      
+      }
     }
   },
   // Given a path to a directory, compress the directory as a ZIP archive.

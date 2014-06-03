@@ -134,12 +134,16 @@ function parseCsw () {
             })
             */
           } else {
-            handle.downloadFile(dirs, directory, linkage, function () {
-              increment += 1;
-              if (increment === counter) {
-                callback(null, directory, archived);                
+            handle.shouldDownload(linkage, function(err, res) {
+              if (res) {
+                handle.downloadFile(dirs, directory, res, function () {
+                  increment += 1;
+                  if (increment === counter) {
+                    callback(null, directory, archived);                
+                  }
+                });                
               }
-            });
+            })
           }
         }
       }) 
