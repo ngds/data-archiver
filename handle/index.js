@@ -153,25 +153,42 @@ module.exports = {
       }
     })
   },
+  shouldDownload: function (linkage, callback) {
+    var formats = [".pdf", ".xls", ".xlsx", ".doc", ".rdf", "wfs", "WFS", 
+                   ".csv", ".txt", ".tsv", ".xml", ".json", ".zip", ".tar",
+                   ".gz", ".pdf", "ows", ".html", ".htm"];
+    _.each(formats, function (format) {
+      if (linkage.search(format) > -1)
+        callback(null, linkage);
+      else callback(new Error);
+    })
+  },
   configurePaths: function (directory, linkage, callback) {
+    var module = this;
     if (linkage) {
-      var parsedUrl = url.parse(linkage);
+      module.shouldDownload(linkage, function (error, response) {
+        if (response) {
+          console.log("YUUUUUUPPPPP")
+          var parsedUrl = url.parse(linkage);
+          // Remove any number of leading slashes (/)
+          var fileName = parsedUrl.path.replace(/^\/*/,"");
+          if (parsedUrl["hostname"] !== null && fileName.length > 0) {
+            // Replace with an underscore anything that is not a-z, 
+            // 'A-Z, 0-9, _, . or -
+            fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+            var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+            var filePath = path.join(directory, dirName);
 
-      // Remove any number of leading slashes (/)
-      var fileName = parsedUrl.path.replace(/^\/*/,"");
-      if (parsedUrl["hostname"] !== null && fileName.length > 0) {
-        // Replace with an underscore anything that is not a-z, 
-        // 'A-Z, 0-9, _, . or -
-        fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-        var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-        var filePath = path.join(directory, dirName);
-
-        callback({
-          "file": fileName,
-          "directory": filePath,
-          "linkage": linkage,
-        });      
-      }      
+            callback({
+              "file": fileName,
+              "directory": filePath,
+              "linkage": linkage,
+            });      
+          }          
+        } else {
+          console.log("NOOOOOPPPPPEEEE")
+        }
+      })
     }
   },
   // Given a path to a directory, compress the directory as a ZIP archive.

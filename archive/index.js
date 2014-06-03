@@ -50,7 +50,7 @@ module.exports = {
     glacier.uploadArchive(options, function (error, response) {
       if (error) callback(error);
       else 
-        var msg = "Uploaded " + compressed + " to Glacier: " + response.archiveId;
+        var msg = "Uploaded :" + response.archiveId;
         fs.rmrf(uncompressed, function (error) {
           if (error) callback(error);
           fs.exists(compressed, function (exists) {
