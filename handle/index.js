@@ -154,6 +154,7 @@ module.exports = {
     })
   },
   shouldDownload: function (linkage, callback) {
+/*
     var formats = [".pdf", ".xls", ".xlsx", ".doc", ".rdf", "wfs", "WFS", 
                    ".csv", ".txt", ".tsv", ".xml", ".json", ".zip", ".tar",
                    ".gz", ".pdf", "ows", ".html", ".htm"];
@@ -162,6 +163,8 @@ module.exports = {
         callback(null, linkage);
       else callback(new Error);
     })
+*/
+  callback(null, linkage);
   },
   configurePaths: function (directory, linkage, callback) {
     var module = this;

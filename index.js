@@ -33,7 +33,7 @@ function parseCsw () {
   var queue = async.queue(function (getRecordUrl, callback) {
     console.log("GET: " + getRecordUrl["host"] + getRecordUrl["path"]);
     parse.parseCsw(getRecordUrl, function (data) {
-      data.forEach(function (item) {
+      async.each(data, function (item) {
         async.waterfall([
           /*
           function (callback) {
@@ -140,30 +140,7 @@ function processor (dirs, data, store, callback) {
       var host = url.parse(linkage)["host"];
       if (_.indexOf(store["dead"], host) === -1) {
         if (linkage.search("service=WFS") !== -1) {
-            /*
-            parse.parseGetCapabilitiesWFS(linkage, function (linkages) {
-              async.forEach(linkages, function (linkage) {
-                handle.configurePaths(directory, linkage, function (res) {
-                  handle.buildDirectory(res.directory, function () {
-                    var urlQuery = url.parse(res.linkage)["query"];
-                    var typeName = querystring.parse(urlQuery)["typeNames"];
-                    if (typeName === "aasg:WellLog") {
-                      console.log("GOT A WELL LOG WFS");
-                      parse.parseWellLogsWFS(res.linkage, res.directory, function (response) {
-                        parse.parseWellLogs(response);
-                      })
-                    }
 
-                    if (typeName !== "aasg:WellLog") {
-                      parse.parseGetFeaturesWFS(res.linkage, res.directory, res.file, function (data) {
-                        
-                      })
-                    }                   
-                  })
-                })
-              })
-            })
-            */
         } else {
           handle.shouldDownload(linkage, function(err, res) {
             if (res) {
@@ -176,6 +153,8 @@ function processor (dirs, data, store, callback) {
             }
           })
         }
+      } else {
+        callback(null, directory, archived);
       }
     })
   })
@@ -200,19 +179,3 @@ function iceberg (uncompressed, compressed, vault, callback) {
     else callback(response);
   })
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
