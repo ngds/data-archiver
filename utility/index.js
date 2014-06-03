@@ -7,8 +7,8 @@ module.exports = {
   datastore: function () {
     var linkages = {};
     linkages.unique = [];
-    linkages.status = [];
     linkages.dead = [];
+    linkages.status = [];
     return linkages;
   },
   buildDirs: function (base) {

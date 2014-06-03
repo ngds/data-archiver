@@ -21,7 +21,6 @@ var argv = require("yargs")
 
 var cmdQueue = [];
 if (argv.parse) cmdQueue.push(parseCsw);
-if (argv.archive) cmdQueue.push(doArchive);
 
 async.series(cmdQueue);
 
@@ -29,12 +28,10 @@ function parseCsw () {
   var base = argv.out ? argv.out : path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
   var vault = "ngds-archive";
-  var dead = [];
-  var unique = [];
-
+  var datastore = new utility.datastore();
+  
   var queue = async.queue(function (getRecordUrl, callback) {
-    console.log(getRecordUrl["host"] + getRecordUrl["path"]);
-    var datastore = new utility.datastore();
+    console.log("GET: " + getRecordUrl["host"] + getRecordUrl["path"]);
     parse.parseCsw(getRecordUrl, function (data) {
       data.forEach(function (item) {
         async.waterfall([
@@ -46,20 +43,20 @@ function parseCsw () {
           function (callback) {
             pinger(item, datastore, callback);
           },
+//          function (datastore, callback) {
+//            logger(dirs, datastore, callback);
+//          },
           function (datastore, callback) {
-            logger(callback);
-          }
-          function (datastore, callback) {
-            constructor(item, datastore, callback);
+            constructor(dirs, item, datastore, callback);
           },
           function (data, datastore, callback) {
-            processor(data, datastore, callback);
+            processor(dirs, data, datastore, callback);
           },
           function (directory, archive, callback) {
             zipper(directory, archive, callback);
           },
           function (uncompressed, compressed, callback) {
-            iceberg(uncompressed, compressed, function (response) {
+            iceberg(uncompressed, compressed, vault, function (response) {
               console.log(response);
             })
           }
@@ -95,27 +92,30 @@ function pinger (data, store, callback) {
     if (_.indexOf(store["unique"], host) === -1) {
       store["unique"].push(host);
       handle.pingUrl(host, function (error, response) {
-        if (error)
-          dead.push(host);
+        if (error) {
           error["ping"] = "DEAD";
-          store["dead"].push(error);
           store["status"].push(error);
-        if (response)
+          store["dead"].push(host);
+        } else if (response) {
           response["ping"] = "ALIVE";
           store["status"].push(response);
+        }
       })
     }
   })
   callback(null, store);
 };
 
-function constructor (item, datastore, callback) {
+function logger (dirs, datastore, callback) {
+  timber.writeUrlStatus(dirs, datastore, function () {
+    callback(null, datastore);
+  })
+};
+
+function constructor (dirs, item, store, callback) {
   var directory = path.join(dirs["record"], item.fileId);
   var archived = path.join(dirs["archive"], item.fileId + ".zip");
   var outXML = path.join(directory, item.fileId + ".xml");
-  var dead = _.map(datastore, function (record) {
-    if (record) return record["linkage"];
-  });
 
   var construct = {
     "directory": directory,
@@ -124,22 +124,21 @@ function constructor (item, datastore, callback) {
     "fileId": item.fileId,
     "linkages": item.linkages,
     "fullRecord": item.fullRecord,
-    "deadLinks": dead,
   }
-  callback(null, construct, datastore);
+  callback(null, construct, store);
 };
 
-function processor (dead, store, callback) {
+function processor (dirs, data, store, callback) {
   var directory = data["directory"];
   var archived = data["archived"];
   var outXML = data["outXML"];
   handle.buildDirectory(dirs, directory, function () {
-    handle.writeXML(outXML);
+    handle.writeXML(outXML, data.fullRecord);
     var counter = data.linkages.length;
     var increment = 0;
     async.each(data.linkages, function (linkage) {
       var host = url.parse(linkage)["host"];
-      if (_.indexOf(data["dead"], host) === -1) {
+      if (_.indexOf(store["dead"], host) === -1) {
         if (linkage.search("service=WFS") !== -1) {
             /*
             parse.parseGetCapabilitiesWFS(linkage, function (linkages) {
@@ -171,43 +170,36 @@ function processor (dead, store, callback) {
               handle.downloadFile(dirs, directory, res, function () {
                 increment += 1;
                 if (increment === counter) {
-                  callback(null, directory, archived);                
+                  callback(null, directory, archived);               
                 }
-              });                
+              });
             }
           })
         }
       }
-    }) 
+    })
   })
 };
 
 function zipper (uncompressed, compressed, callback) {
-  handle.compressDirectory(dirs, uncompressed, compressed, function () {
+  handle.compressDirectory(uncompressed, compressed, function () {
     callback(null, uncompressed, compressed);
   })
-}
+};
 
 function vault (callback) {
   archiver.checkGlacierVaults(vault, function (error, response) {
     if (error) callback(error);
     else callback(null);
   });    
-}
+};
 
-function iceberg (uncompressed, compressed, callback) {
-  archiver.uploadToGlacier(dirs, uncompressed, compressed, vault, function (error, response) {
+function iceberg (uncompressed, compressed, vault, callback) {
+  archiver.uploadToGlacier(uncompressed, compressed, vault, function (error, response) {
     if (error) callback(error);
     else callback(response);
   })
-}
-
-function logger (dirs, datastore, callback) {
-  timber.writeUrlStatus(dirs, datastore, function () {
-
-  })
-}
-
+};
 
 
 

@@ -185,7 +185,7 @@ module.exports = {
     }
   },
   // Given a path to a directory, compress the directory as a ZIP archive.
-  compressDirectory: function (dirs, uncompressed, compressed, callback) {
+  compressDirectory: function (uncompressed, compressed, callback) {
     var zipped = fs.createWriteStream(compressed);
     var archive = archiver("zip");
 

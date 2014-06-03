@@ -37,7 +37,7 @@ module.exports = {
       }
     });
   },
-  uploadToGlacier: function (dirs, uncompressed, compressed, vault, callback) {
+  uploadToGlacier: function (uncompressed, compressed, vault, callback) {
     aws.config.loadFromPath("./awsConfig.json");
     var glacier = new aws.Glacier();
     var file = fs.readFileSync(compressed);
