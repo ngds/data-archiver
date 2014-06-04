@@ -49,8 +49,8 @@ function parseCsw () {
           function (data, datastore, callback) {
             processor(data, datastore, callback);
           },
-          function (directory, archive, callback) {
-            zipper(directory, archive, callback);
+          function (sanityCheck, callback) {
+            zipper(sanityCheck, callback);
           },
         ], function (error, result) {
           if (error) callback(error);
@@ -61,13 +61,12 @@ function parseCsw () {
   }, 1);
 
   queue.drain = function () {
-    if (queue.length() === 0) {
-      console.log("All getRecordUrls have been processed.");      
+    if (queue.length() === 0) {      
     }
   }
   
   function startQueue () {
-    utility.doRequest(33875, 20, function (x) {
+    utility.doRequest(50/*33875*/, 5, function (x) {
       var base = "http://geothermaldata.org/csw?";
       utility.buildUrl(base, x.counter, x.increment, function (getRecords) {
         queue.push(getRecords);
@@ -83,7 +82,7 @@ function pinger (data, store, callback) {
     var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
     if (_.indexOf(store["unique"], host) === -1) {
       store["unique"].push(host);
-      handle.pingUrl(host, function (error, response) {
+      handle.pingLogger(host, function (error, response) {
         if (error) {
           error["ping"] = "DEAD";
           store["status"].push(error);
@@ -105,6 +104,8 @@ function logger (dirs, datastore, callback) {
 };
 
 function constructor (dirs, item, store, callback) {
+  var counter = item.length;
+  var increment = 0;
   var construct = _.map(item.linkages, function (linkage) {
     if (linkage.length > 0) {
       var parsedUrl = url.parse(linkage);
@@ -126,7 +127,7 @@ function constructor (dirs, item, store, callback) {
           "fileId": item.fileId,
           "linkage": linkage,
           "fullRecord": item.fullRecord,
-        }        
+        }          
       }
     }
   });
@@ -136,6 +137,8 @@ function constructor (dirs, item, store, callback) {
 function processor (construct, store, callback) {
   var counter = construct.length;
   var increment = 0;
+  var insanityCheck = [];
+  var sanityCheck = [];
   async.each(construct, function (data) {
     if (typeof data !== "undefined") {
       handle.buildDirectory(data["parent"], function (parent) {
@@ -143,12 +146,33 @@ function processor (construct, store, callback) {
           handle.writeXML(data["outXML"], data["fullRecord"], function () {
             if (_.indexOf(store["dead"], data["host"]) === -1) {
               if (data["linkage"].search("service=WFS") !== -1) {
-                
+/*
+                sanityCheck.push({
+                  "child": data["child"], 
+                  "archive": data["childArchive"]
+                });
+*/
+                if (_.indexOf(insanityCheck, data["childArchive"]) === -1) {
+                  insanityCheck.push(data["childArchive"]);                  
+                }
+
+                increment += 1;
+                if (increment === counter) {
+                  callback(null, sanityCheck);        
+                }
               } else {
                 handle.download(data["child"], data["linkage"], function () {
+                  if (_.indexOf(insanityCheck, data["childArchive"]) === -1) {
+                    insanityCheck.push(data["childArchive"]);                  
+                    sanityCheck.push({
+                      "child": data["child"], 
+                      "archive": data["childArchive"]
+                    });
+                  }
+
                   increment += 1;
                   if (increment === counter) {
-                    callback(null, data["child"], data["childArchive"]);                  
+                    callback(null, sanityCheck);        
                   }
                 })
               }
@@ -160,9 +184,18 @@ function processor (construct, store, callback) {
   })
 }
 
-function zipper (uncompressed, compressed, callback) {
-  handle.compressDirectory(uncompressed, compressed, function () {
-    callback(null, uncompressed, compressed);
+function zipper (data, callback) {
+  var counter = data.length;
+  var increment = 0;
+  data.forEach(function(item) {
+    var uncompressed = item["child"];
+    var compressed = item["archive"];
+    handle.compressDirectory(uncompressed, compressed, function (res) {
+      increment += 1;
+      if (increment === counter) {
+        callback(null);        
+      }
+    })    
   })
 };
 
