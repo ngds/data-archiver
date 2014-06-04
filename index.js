@@ -113,52 +113,48 @@ function logger (dirs, datastore, callback) {
 };
 
 function constructor (dirs, item, store, callback) {
-  var directory = path.join(dirs["record"], item.fileId);
-  var archived = path.join(dirs["archive"], item.fileId + ".zip");
-  var outXML = path.join(directory, item.fileId + ".xml");
+  var construct = _.each(item.linkages, function (linkage) {
+    var parsedUrl = url.parse(linkage);
+    var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
+    var parent = path.join(dirs["record"], host);
+    var parentArchive = path.join(dirs["record"], host + ".zip");
 
-  var construct = {
-    "directory": directory,
-    "archived": archived,
-    "outXML": outXML,
-    "fileId": item.fileId,
-    "linkages": item.linkages,
-    "fullRecord": item.fullRecord,
-  }
+    var child = path.join(parent, item.fileId);
+    var childArchive = path.join(parent, item.fileId + ".zip");
+    var outXML = path.join(parent, item.fileId + ".xml");
+    
+    return {
+      "host": host,
+      "parent": parent,
+      "parentArchive": parentArchive,
+      "child": child,
+      "archive": childArchive,
+      "outXML": outXML,
+      "fileId": item.fileId,
+      "linkage": linkage,
+      "fullRecord": item.fullRecord,
+    }
+  });
   callback(null, construct, store);
 };
 
-function processor (dirs, data, store, callback) {
-  var directory = data["directory"];
-  var archived = data["archived"];
-  var outXML = data["outXML"];
-  handle.buildDirectory(dirs, directory, function () {
-    handle.writeXML(outXML, data.fullRecord);
-    var counter = data.linkages.length;
-    var increment = 0;
-    async.each(data.linkages, function (linkage) {
-      var host = url.parse(linkage)["host"];
-      if (_.indexOf(store["dead"], host) === -1) {
-        if (linkage.search("service=WFS") !== -1) {
-
-        } else {
-          handle.shouldDownload(linkage, function(err, res) {
-            if (res) {
-              handle.downloadFile(dirs, directory, res, function () {
-                increment += 1;
-                if (increment === counter) {
-                  callback(null, directory, archived);               
-                }
-              });
-            }
+function processor (dirs, construct, store, callback) {
+  async.each(construct, function (data) {
+    handle.buildDirectory(data["parent"], function (err, parent) {
+      if (err) callback(err);
+      handle.buildDirectory(data["child"], function (err, child) {
+        if (err) callback(err);
+        handle.writeXML(data["outXML"], data["fullRecord"]);
+        if (_.indexOf(store["dead"], data["host"]) === -1) {
+          handle.download(store["child"], store["linkage"], function () {
+            var sanityCheck;
           })
         }
-      } else {
-        callback(null, directory, archived);
-      }
+      })
     })
+    callback(null, data["child"], data["childArchive"]);
   })
-};
+}
 
 function zipper (uncompressed, compressed, callback) {
   handle.compressDirectory(uncompressed, compressed, function () {

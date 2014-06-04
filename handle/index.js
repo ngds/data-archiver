@@ -15,7 +15,7 @@ module.exports = {
   writeXML: function (outputXml, data) { 
     fs.writeFileSync(outputXml, data);
   },
-  downloadFTP: function (dirs, linkage, path, callback) {
+  downloadFTP: function (linkage, path, callback) {
     ftp.get(linkage, path, function (error, response) {
       if (error) callback(error);
       if (typeof callback === "function") {
@@ -23,7 +23,7 @@ module.exports = {
       }
     })
   },
-  downloadHTTP: function (dirs, linkage, path, callback) {
+  downloadHTTP: function (linkage, path, callback) {
     http.get(linkage, function (response) {
       var file = fs.createWriteStream(path);
       response.pipe(file);
@@ -45,7 +45,7 @@ module.exports = {
       })
     })
   },
-  downloadHTTPS: function (dirs, linkage, path, callback) {
+  downloadHTTPS: function (linkage, path, callback) {
     https.get(linkage, function (response) {
       var file = fs.createWriteStream(path);
       response.pipe(file);
@@ -67,45 +67,36 @@ module.exports = {
       })
     })
   },
-  downloadFile: function (dirs, directory, linkage, callback) {    
+  download: function (directory, linkage, callback) {    
     var module = this;
-    this.configurePaths(directory, linkage, function (res) {
+    module.configurePaths(directory, linkage, function (res) {
 
       var directory = res.directory.replace(/(\r\n|\n|\r)/gm,"");
       var file = res.file.replace(/(\r\n|\n|\r)/gm,"");
-      var outputPath = path.join(directory, file);
-
-      module.buildDirectory(dirs, directory, function (error) {
-        fs.exists(directory, function (exists) {
-          if (exists) {                
-            // Write FTP files to local outputs folder
-            if (res.linkage.indexOf("ftp") === 0) {
-              module.downloadFTP(dirs, res.linkage, outputPath, function (res) {
-                if (typeof callback === "function") {
-                  callback();
-                }
-              })
-            } 
-            // Write HTTP files to local outputs folder
-            else if (res.linkage.indexOf("http") === 0 && 
-                     res.linkage.indexOf("https") === -1) {
-              module.downloadHTTP(dirs, res.linkage, outputPath, function () {
-                if (typeof callback === "function") {
-                  callback();
-                }
-              })
-            }
-            // Write HTTPS files to local outputs folder
-            else if (res.linkage.indexOf("https") === 0) {
-              module.downloadHTTPS(dirs, res.linkage, outputPath, function () {
-                if (typeof callback === "function") {
-                  callback();
-                }
-              })
-            }
+      var output = path.join(directory, file);
+      
+      if (res.linkage.indexOf("ftp") > -1) {
+        module.downloadFTP(res.linkage, output, function () {
+          if (typeof callback === "function") {
+            callback();
           }
         })
-      })      
+      } 
+      else if (res.linkage.indexOf("http") > -1 && 
+               res.linkage.indexOf("https") <= -1) {
+        module.downloadHTTP(res.linkage, output, function () {
+          if (typeof callback === "function") {
+            callback();
+          }
+        })
+      }
+      else if (res.linkage.indexOf("https") > -1) {
+        module.downloadHTTPS(res.linkage, output, function () {
+          if (typeof callback === "function") {
+            callback();
+          }
+        })
+      }
     })
   },
   pingUrl: function (linkage, callback) {
@@ -139,16 +130,14 @@ module.exports = {
       callback(new PingError({"linkage": linkage, "time": time}));
     }
   },
-  buildDirectory: function (dirs, path, callback) {
+  buildDirectory: function (path, callback) {
     fs.exists(path, function (exists) {
       if (exists) {
-        callback();
+        callback(path);
       } else {
         fs.mkdir(path, function (error) {
-          if (error) {
-            callback(error);
-          }
-          callback();
+          if (error) callback(error);
+          else callback(null, path);
         })
       }
     })
