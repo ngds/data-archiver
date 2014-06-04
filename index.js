@@ -43,30 +43,22 @@ function parseCsw () {
           function (callback) {
             pinger(item, datastore, callback);
           },
-//          function (datastore, callback) {
-//            logger(dirs, datastore, callback);
-//          },
           function (datastore, callback) {
             constructor(dirs, item, datastore, callback);
           },
           function (data, datastore, callback) {
-            processor(dirs, data, datastore, callback);
+            processor(data, datastore, callback);
           },
           function (directory, archive, callback) {
             zipper(directory, archive, callback);
           },
-          function (uncompressed, compressed, callback) {
-            iceberg(uncompressed, compressed, vault, function (response) {
-              console.log(response);
-            })
-          }
         ], function (error, result) {
           if (error) callback(error);
         });
       })
       callback();
     })
-  }, 1);
+  }, 10);
 
   queue.drain = function () {
     if (queue.length() === 0) {
@@ -113,46 +105,56 @@ function logger (dirs, datastore, callback) {
 };
 
 function constructor (dirs, item, store, callback) {
-  var construct = _.each(item.linkages, function (linkage) {
-    var parsedUrl = url.parse(linkage);
-    var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
-    var parent = path.join(dirs["record"], host);
-    var parentArchive = path.join(dirs["record"], host + ".zip");
+  var construct = _.map(item.linkages, function (linkage) {
+    if (linkage.length > 0) {
+      var parsedUrl = url.parse(linkage);
+      var host = parsedUrl["host"];
+      var parent = path.join(dirs["record"], host);
+      var parentArchive = path.join(dirs["record"], host + ".zip");
+      var child = path.join(parent, item.fileId);
+      var childArchive = path.join(parent, item.fileId + ".zip");
+      var outXML = path.join(child, item.fileId + ".xml");
 
-    var child = path.join(parent, item.fileId);
-    var childArchive = path.join(parent, item.fileId + ".zip");
-    var outXML = path.join(parent, item.fileId + ".xml");
-    
-    return {
-      "host": host,
-      "parent": parent,
-      "parentArchive": parentArchive,
-      "child": child,
-      "archive": childArchive,
-      "outXML": outXML,
-      "fileId": item.fileId,
-      "linkage": linkage,
-      "fullRecord": item.fullRecord,
+      return {
+        "host": host,
+        "parent": parent,
+        "parentArchive": parentArchive,
+        "child": child,
+        "childArchive": childArchive,
+        "outXML": outXML,
+        "fileId": item.fileId,
+        "linkage": linkage,
+        "fullRecord": item.fullRecord,
+      }      
     }
   });
   callback(null, construct, store);
 };
 
-function processor (dirs, construct, store, callback) {
+function processor (construct, store, callback) {
+  var counter = construct.length;
+  var increment = 0;
   async.each(construct, function (data) {
-    handle.buildDirectory(data["parent"], function (err, parent) {
-      if (err) callback(err);
-      handle.buildDirectory(data["child"], function (err, child) {
-        if (err) callback(err);
-        handle.writeXML(data["outXML"], data["fullRecord"]);
-        if (_.indexOf(store["dead"], data["host"]) === -1) {
-          handle.download(store["child"], store["linkage"], function () {
-            var sanityCheck;
-          })
-        }
+    if (typeof data !== "undefined") {
+      handle.buildDirectory(data["parent"], function (parent) {
+        handle.buildDirectory(data["child"], function (child) {
+          handle.writeXML(data["outXML"], data["fullRecord"], function () {
+            if (_.indexOf(store["dead"], data["host"]) === -1) {
+              if (data["linkage"].search("service=WFS") !== -1) {
+                
+              } else {
+                handle.download(data["child"], data["linkage"], function () {
+                  increment += 1;
+                  if (increment === counter) {
+                    callback(null, data["child"], data["childArchive"]);                  
+                  }
+                })
+              }
+            }            
+          });
+        })
       })
-    })
-    callback(null, data["child"], data["childArchive"]);
+    }
   })
 }
 

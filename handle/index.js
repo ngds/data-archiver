@@ -1,5 +1,5 @@
 var ftp = require('ftp-get');
-var fs = require("fs");
+var fs = require("fs.extra");
 var http = require("http");
 var https = require("https");
 var request = require("request");
@@ -12,8 +12,15 @@ var timber = require("../timber");
 
 module.exports = {
   // Write out XML data held in-memory to a text file.
-  writeXML: function (outputXml, data) { 
-    fs.writeFileSync(outputXml, data);
+  writeXML: function (outputXml, data, callback) {
+    fs.exists(outputXml, function (exists) {
+      if (exists) {
+        callback(null);
+      } else {
+        fs.writeFileSync(outputXml, data);
+        callback(null);
+      }
+    })
   },
   downloadFTP: function (linkage, path, callback) {
     ftp.get(linkage, path, function (error, response) {
@@ -67,14 +74,14 @@ module.exports = {
       })
     })
   },
-  download: function (directory, linkage, callback) {    
+  download: function (directory, linkage, callback) {
     var module = this;
     module.configurePaths(directory, linkage, function (res) {
 
       var directory = res.directory.replace(/(\r\n|\n|\r)/gm,"");
       var file = res.file.replace(/(\r\n|\n|\r)/gm,"");
       var output = path.join(directory, file);
-      
+
       if (res.linkage.indexOf("ftp") > -1) {
         module.downloadFTP(res.linkage, output, function () {
           if (typeof callback === "function") {
@@ -133,7 +140,7 @@ module.exports = {
   buildDirectory: function (path, callback) {
     fs.exists(path, function (exists) {
       if (exists) {
-        callback(path);
+        callback(null, path);
       } else {
         fs.mkdir(path, function (error) {
           if (error) callback(error);
@@ -164,13 +171,12 @@ module.exports = {
       if (parsedUrl["hostname"] !== null && fileName.length > 0) {
         // Replace with an underscore anything that is not a-z, 
         // 'A-Z, 0-9, _, . or -
-      fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
+        fileName = fileName.replace(/[^a-zA-Z0-9_.-]/gim, "_");
         var dirName = parsedUrl.hostname.replace(/[^a-zA-Z0-9_.-]/gim, "_");
-        var filePath = path.join(directory, dirName);
 
         callback({
           "file": fileName,
-          "directory": filePath,
+          "directory": directory,
           "linkage": linkage,
         });      
       }
@@ -182,7 +188,10 @@ module.exports = {
     var archive = archiver("zip");
 
     zipped.on("close", function () {
-      callback();
+      fs.rmrf(uncompressed, function (error) {
+        if (error) callback(error);
+        else callback();
+      })
     });
 
     archive.on("error", function (error) {
@@ -196,7 +205,3 @@ module.exports = {
     archive.finalize();
   },
 };
-
-
-
-
