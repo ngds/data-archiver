@@ -58,7 +58,7 @@ function parseCsw () {
       })
       callback();
     })
-  }, 10);
+  }, 1);
 
   queue.drain = function () {
     if (queue.length() === 0) {
@@ -109,23 +109,25 @@ function constructor (dirs, item, store, callback) {
     if (linkage.length > 0) {
       var parsedUrl = url.parse(linkage);
       var host = parsedUrl["host"];
-      var parent = path.join(dirs["record"], host);
-      var parentArchive = path.join(dirs["record"], host + ".zip");
-      var child = path.join(parent, item.fileId);
-      var childArchive = path.join(parent, item.fileId + ".zip");
-      var outXML = path.join(child, item.fileId + ".xml");
+      if (host) {
+        var parent = path.join(dirs["record"], host);
+        var parentArchive = path.join(dirs["record"], host + ".zip");
+        var child = path.join(parent, item.fileId);
+        var childArchive = path.join(parent, item.fileId + ".zip");
+        var outXML = path.join(child, item.fileId + ".xml");
 
-      return {
-        "host": host,
-        "parent": parent,
-        "parentArchive": parentArchive,
-        "child": child,
-        "childArchive": childArchive,
-        "outXML": outXML,
-        "fileId": item.fileId,
-        "linkage": linkage,
-        "fullRecord": item.fullRecord,
-      }      
+        return {
+          "host": host,
+          "parent": parent,
+          "parentArchive": parentArchive,
+          "child": child,
+          "childArchive": childArchive,
+          "outXML": outXML,
+          "fileId": item.fileId,
+          "linkage": linkage,
+          "fullRecord": item.fullRecord,
+        }        
+      }
     }
   });
   callback(null, construct, store);
