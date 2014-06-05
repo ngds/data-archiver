@@ -11,7 +11,7 @@ var async = require("async");
 var timber = require("../timber");
 var domain = require("domain");
 
-http.globalAgent.maxSockets = 100;
+http.globalAgent.maxSockets = 5;
 
 module.exports = {
   // Write out XML data held in-memory to a text file.
@@ -51,14 +51,14 @@ module.exports = {
 
         file.on("error", function (err) {
           throw err;
+          callback();
         })
 
         res.on("error", function (err) {
           file.end();
           throw err;
+          callback();
         })
-
-        res.shouldKeepAlive = false;
       })
     })
   },
@@ -80,14 +80,14 @@ module.exports = {
 
         file.on("error", function (err) {
           throw err;
+          callback();
         })
 
         res.on("error", function (err) {
           file.end();
           throw err;
+          callback();
         })
-
-        res.shouldKeepAlive = false;
       })
     })
   },
@@ -110,7 +110,6 @@ module.exports = {
       http.get(options, function (res) {
         if (res.statusCode === 200) callback(null, linkage);
         else callback(new Error(linkage));
-        res.shouldKeepAlive = false;
       })
     })
   },
@@ -127,7 +126,6 @@ module.exports = {
       https.get(options, function (res) {
         if (res.statusCode === 200) callback(null, linkage);
         else callback(new Error(linkage));
-        res.shouldKeepAlive = false;
       })
     })
   },

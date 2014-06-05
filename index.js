@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-//process.setMaxListeners(0);
-
 var async = require("async");
 var parse = require("./parse");
 var handle = require("./handle");
@@ -20,10 +18,29 @@ memwatch.on("stats", function (stats) {
 });
 
 var argv = require("yargs")
-  .usage("Command line utility for archiving NGDS data on Amazon S3")
+  .usage("Command line utility for archiving NGDS data on Amazon Glacier")
+  
+  .alias("c", "csw")
+  .describe("c", "CSW endpoint to scrape data from")
 
-  .alias("p", "parse")
+  .alias("m", "max")
+  .describe("m", "Maximum limit of metadata records to scrape")
+
+  .alias("s", "start")
+  .describe("s", "Metadata record to start scraping from")
+
+  .alias("i", "increment")
+  .describe("i", "Number of metadata records to return per request")
+
+  .alias("v", "vault")
+  .describe("v", "Name of Amazon Glacier vault to pipe data to")
+
+  .alias("p", "pingpong")
+  .describe("p", "Ping every linkage in every metadata record")
+
+  .alias("k", "parse")
   .describe("Parse a CSW")
+  .demand("k")
   .argv;
 
 var cmdQueue = [];
@@ -32,6 +49,15 @@ if (argv.parse) cmdQueue.push(parseCsw);
 async.series(cmdQueue);
 
 function parseCsw () {
+  var parameters = {
+    "host": "http://geothermaldata.org/csw?",
+    "path": "request=GetRecords&service=CSW&version=2.0.2&resultType=results&outputSchema=http://www.isotc211.org/2005/gmd&typeNames=csw:Record&elementSetName=full&maxRecords=0";
+  };
+
+  
+}
+
+function _parseCsw () {
   var base = argv.out ? argv.out : path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
   var vault = "ngds-archive";
@@ -40,21 +66,13 @@ function parseCsw () {
   var queue = async.queue(function (getRecordUrl, callback) {
     console.log("GET: " + getRecordUrl["host"] + getRecordUrl["path"]);
     parse.parseCsw(getRecordUrl, function (data) {
-      async.each(data, function (item) {
+      data.forEach(function (item) {
         async.waterfall([
-          /*
           function (callback) {
-            vault(callback);
+            constructor(dirs, item, callback);
           },
-          */
-          function (callback) {
-            pinger(item, datastore, callback);
-          },
-          function (datastore, callback) {
-            constructor(dirs, item, datastore, callback);
-          },
-          function (data, datastore, callback) {
-            processor(data, datastore, callback);
+          function (data, callback) {
+            processor(data, callback);
           },
           function (uncompressed, compressed, callback) {
             zipper(uncompressed, compressed, callback);
@@ -73,7 +91,7 @@ function parseCsw () {
   }
   
   function startQueue () {
-    utility.doRequest(33875, 10, function (x) {
+    utility.doRequest(33875, 5, function (x) {
       var base = "http://geothermaldata.org/csw?";
       utility.buildUrl(base, x.counter, x.increment, function (getRecords) {
         queue.push(getRecords);
@@ -82,35 +100,21 @@ function parseCsw () {
   }
   startQueue();
 };
-
-function pinger (data, store, callback) {
-  async.forEach(data.linkages, function (linkage) {
-    var parsedUrl = url.parse(linkage);
-    var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
-    if (_.indexOf(store["unique"], host) === -1) {
-      store["unique"].push(host);
-      handle.pingLogger(host, function (error, response) {
-        if (error) {
-          error["ping"] = "DEAD";
-          store["status"].push(error);
-          store["dead"].push(host);
-        } else if (response) {
-          response["ping"] = "ALIVE";
-          store["status"].push(response);
-        }
-      })
-    }
-  })
-  callback(null, store);
-};
-
+/*
+function queue () {
+  var queue = async.queue(function () {}, 1);
+  function start () {
+    utility.doRequest
+  }
+}
+*/
 function logger (dirs, datastore, callback) {
   timber.writeUrlStatus(dirs, datastore, function () {
     callback(null, datastore);
   })
 };
 
-function constructor (dirs, item, store, callback) {
+function constructor (dirs, item, callback) {
   var construct = _.map(item.linkages, function (linkage) {
     if (linkage.length > 0) {
       var parsedUrl = url.parse(linkage);
@@ -136,24 +140,26 @@ function constructor (dirs, item, store, callback) {
       }
     }
   });
-  callback(null, construct, store);
+  callback(null, construct);
 };
 
-function processor (construct, store, callback) {
+function pingPong () {
+
+}
+
+function processor (construct, callback) {
   async.each(construct, function (data) {
     if (typeof data !== "undefined") {
       handle.buildDirectory(data["parent"], function (parent) {
         handle.buildDirectory(data["child"], function (child) {
           handle.writeXML(data["outXML"], data["fullRecord"], function () {
-            if (_.indexOf(store["dead"], data["host"]) === -1) {
-              if (data["linkage"].search("service=WFS") !== -1) {
-                callback();
-              } else {
-                handle.download(data["child"], data["linkage"], function () {
-                  callback(null, data["child"], data["childArchive"]);
-                })
-              }
-            }            
+            if (data["linkage"].search("service=WFS") !== -1) {
+              callback();
+            } else {
+              handle.download(data["child"], data["linkage"], function () {
+                callback(null, data["child"], data["childArchive"]);
+              })
+            }
           });
         })
       })
