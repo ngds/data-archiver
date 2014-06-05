@@ -10,7 +10,7 @@ var archiver = require("archiver");
 var async = require("async");
 var timber = require("../timber");
 
-http.globalAgent.maxSockets = 100;
+http.globalAgent.maxSockets = 50;
 
 module.exports = {
   // Write out XML data held in-memory to a text file.
@@ -19,17 +19,17 @@ module.exports = {
       if (exists) {
         callback(null);
       } else {
-        fs.writeFileSync(outputXml, data);
-        callback(null);
+        fs.writeFile(outputXml, data, function (error) {
+          if (error) callback(error);
+          else callback();
+        })
       }
     })
   },
   downloadFTP: function (linkage, path, callback) {
     ftp.get(linkage, path, function (error, response) {
       if (error) callback(error);
-      if (typeof callback === "function") {
-        callback();
-      }
+      else callback();
     })
   },
   downloadHTTP: function (linkage, path, callback) {
@@ -206,19 +206,6 @@ module.exports = {
         })
       }
     })
-  },
-  shouldDownload: function (linkage, callback) {
-/*
-    var formats = [".pdf", ".xls", ".xlsx", ".doc", ".rdf", "wfs", "WFS", 
-                   ".csv", ".txt", ".tsv", ".xml", ".json", ".zip", ".tar",
-                   ".gz", ".pdf", "ows", ".html", ".htm"];
-    _.each(formats, function (format) {
-      if (linkage.search(format) > -1)
-        callback(null, linkage);
-      else callback(new Error);
-    })
-*/
-  callback(null, linkage);
   },
   configurePaths: function (directory, linkage, callback) {
     var module = this;

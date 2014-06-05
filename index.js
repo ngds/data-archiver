@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+//process.setMaxListeners(0);
+
 var async = require("async");
 var parse = require("./parse");
 var handle = require("./handle");
@@ -11,6 +13,11 @@ var url = require("url");
 var fs = require("fs");
 var _ = require("underscore");
 var querystring = require("querystring");
+
+var memwatch = require("memwatch");
+memwatch.on("stats", function (info) {
+  console.log(info);
+});
 
 var argv = require("yargs")
   .usage("Command line utility for archiving NGDS data on Amazon S3")
@@ -31,7 +38,7 @@ function parseCsw () {
   var datastore = new utility.datastore();
   
   var queue = async.queue(function (getRecordUrl, callback) {
-    console.log("GET: " + getRecordUrl["host"] + getRecordUrl["path"]);
+//    console.log("GET: " + getRecordUrl["host"] + getRecordUrl["path"]);
     parse.parseCsw(getRecordUrl, function (data) {
       async.each(data, function (item) {
         async.waterfall([
@@ -66,7 +73,7 @@ function parseCsw () {
   }
   
   function startQueue () {
-    utility.doRequest(50/*33875*/, 5, function (x) {
+    utility.doRequest(33875, 10, function (x) {
       var base = "http://geothermaldata.org/csw?";
       utility.buildUrl(base, x.counter, x.increment, function (getRecords) {
         queue.push(getRecords);
@@ -104,8 +111,6 @@ function logger (dirs, datastore, callback) {
 };
 
 function constructor (dirs, item, store, callback) {
-  var counter = item.length;
-  var increment = 0;
   var construct = _.map(item.linkages, function (linkage) {
     if (linkage.length > 0) {
       var parsedUrl = url.parse(linkage);
@@ -135,10 +140,6 @@ function constructor (dirs, item, store, callback) {
 };
 
 function processor (construct, store, callback) {
-  var counter = construct.length;
-  var increment = 0;
-  var insanityCheck = [];
-  var sanityCheck = [];
   async.each(construct, function (data) {
     if (typeof data !== "undefined") {
       handle.buildDirectory(data["parent"], function (parent) {
@@ -146,34 +147,12 @@ function processor (construct, store, callback) {
           handle.writeXML(data["outXML"], data["fullRecord"], function () {
             if (_.indexOf(store["dead"], data["host"]) === -1) {
               if (data["linkage"].search("service=WFS") !== -1) {
-/*
-                sanityCheck.push({
-                  "child": data["child"], 
-                  "archive": data["childArchive"]
-                });
-*/
-                if (_.indexOf(insanityCheck, data["childArchive"]) === -1) {
-                  insanityCheck.push(data["childArchive"]);                  
-                }
-
-                increment += 1;
-                if (increment === counter) {
-                  callback(null, sanityCheck);        
-                }
+                callback();
               } else {
                 handle.download(data["child"], data["linkage"], function () {
-                  if (_.indexOf(insanityCheck, data["childArchive"]) === -1) {
-                    insanityCheck.push(data["childArchive"]);                  
-                    sanityCheck.push({
-                      "child": data["child"], 
-                      "archive": data["childArchive"]
-                    });
-                  }
-
-                  increment += 1;
-                  if (increment === counter) {
-                    callback(null, sanityCheck);        
-                  }
+                  callback(null, {"child": data["child"],
+                    "archive": data["childArchive"],
+                  });
                 })
               }
             }            
@@ -185,18 +164,13 @@ function processor (construct, store, callback) {
 }
 
 function zipper (data, callback) {
-  var counter = data.length;
-  var increment = 0;
-  data.forEach(function(item) {
-    var uncompressed = item["child"];
-    var compressed = item["archive"];
+  if (data) {
+    var uncompressed = data["child"];
+    var compressed = data["archive"];
     handle.compressDirectory(uncompressed, compressed, function (res) {
-      increment += 1;
-      if (increment === counter) {
-        callback(null);        
-      }
+      callback(null);        
     })    
-  })
+  }
 };
 
 function vault (callback) {
