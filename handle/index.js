@@ -52,7 +52,8 @@ module.exports = {
       response.shouldKeepAlive = false;
 
       process.on("uncaughtException", function (error) {
-        callback(error);
+        console.log("HTTP caught exception: " + error);
+        //callback(error);
       })
     })
   },
@@ -76,7 +77,8 @@ module.exports = {
       response.shouldKeepAlive = false;
 
       process.on("uncaughtException", function (error) {
-        callback(error);
+        console.log("HTTPS caught exception: " + error);
+        //callback(error);
       })
     })
   },

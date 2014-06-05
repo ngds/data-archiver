@@ -15,8 +15,8 @@ var _ = require("underscore");
 var querystring = require("querystring");
 
 var memwatch = require("memwatch");
-memwatch.on("stats", function (info) {
-  console.log(info);
+memwatch.on("stats", function (stats) {
+  console.log("USAGE TREND: " + stats["usage_trend"]);
 });
 
 var argv = require("yargs")
@@ -56,8 +56,8 @@ function parseCsw () {
           function (data, datastore, callback) {
             processor(data, datastore, callback);
           },
-          function (sanityCheck, callback) {
-            zipper(sanityCheck, callback);
+          function (uncompressed, compressed, callback) {
+            zipper(uncompressed, compressed, callback);
           },
         ], function (error, result) {
           if (error) callback(error);
@@ -150,9 +150,7 @@ function processor (construct, store, callback) {
                 callback();
               } else {
                 handle.download(data["child"], data["linkage"], function () {
-                  callback(null, {"child": data["child"],
-                    "archive": data["childArchive"],
-                  });
+                  callback(null, data["child"], data["childArchive"]);
                 })
               }
             }            
@@ -163,10 +161,8 @@ function processor (construct, store, callback) {
   })
 }
 
-function zipper (data, callback) {
-  if (data) {
-    var uncompressed = data["child"];
-    var compressed = data["archive"];
+function zipper (uncompressed, compressed, callback) {
+  if (uncompressed && compressed) {
     handle.compressDirectory(uncompressed, compressed, function (res) {
       callback(null);        
     })    
