@@ -11,32 +11,39 @@ var fs = require("fs");
 var path = require("path");
 var async = require("async");
 var handle = require("../handle");
+var domain = require("domain");
 
 module.exports = {
-  scaleRequest: function (parameters, increment, callback) {
-    var counter = 0,
-      total;
+  scaleRequest: function (parameters, callback) {
+    var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
+    var searchResults = new saxpath.SaXPath(saxParser, "//csw:SearchResults");
+    var serverDomain = domain.create();
 
-    http.get(parameters).on("response", function (response) {
-      var xml = new xmlStream(response, "utf-8");
-      xml.on("endElement: csw:SearchResults", function (results) {
-        total = results.$.numberOfRecordsMatched
-        while (counter < total) {
-          counter += increment;
-        }
-    
-        var placeHolder = (counter-increment),
-        lastRecord = ((increment-(counter-total))+placeHolder);
+    serverDomain.on("error", function (err) {
+      console.log(err);
+    });
 
-        if (typeof callback === "function") {
-        callback({
-            "increment": increment,
-            "placeHolder": placeHolder,
-            "lastRecord": lastRecord,
-          })
-        }
+    serverDomain.run(function () {
+      http.get(parameters, function (res) {
+        res.pipe(saxParser);
+
+        var totalRecords;
+
+        searchResults.on("match", function (xml) {
+          var doc = new dom().parseFromString(xml);
+          var records = xpath(doc, "@numberOfRecordsMatched")[0].value
+          totalRecords = records;
+        });
+
+        searchResults.on("end", function () {
+          callback(totalRecords);
+        });
+
+        res.on("error", function (err) {
+          throw err;
+        })
       })
-    }).end();
+    })
   },
   parseCsw: function (parameters, callback) {
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});

@@ -49,12 +49,9 @@ if (argv.parse) cmdQueue.push(parseCsw);
 async.series(cmdQueue);
 
 function parseCsw () {
-  var parameters = {
-    "host": "http://geothermaldata.org/csw?",
-    "path": "request=GetRecords&service=CSW&version=2.0.2&resultType=results&outputSchema=http://www.isotc211.org/2005/gmd&typeNames=csw:Record&elementSetName=full&maxRecords=0";
-  };
+  var parameters = "http://geothermaldata.org/csw?request=GetRecords&service=CSW&version=2.0.2&resultType=results&outputSchema=http://www.isotc211.org/2005/gmd&typeNames=csw:Record&elementSetName=full&maxRecords=0";
 
-  
+  parse.scaleRequest(parameters);
 }
 
 function _parseCsw () {
