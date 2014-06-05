@@ -38,7 +38,7 @@ function parseCsw () {
   var datastore = new utility.datastore();
   
   var queue = async.queue(function (getRecordUrl, callback) {
-//    console.log("GET: " + getRecordUrl["host"] + getRecordUrl["path"]);
+    console.log("GET: " + getRecordUrl["host"] + getRecordUrl["path"]);
     parse.parseCsw(getRecordUrl, function (data) {
       async.each(data, function (item) {
         async.waterfall([

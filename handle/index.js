@@ -9,8 +9,9 @@ var url = require("url");
 var archiver = require("archiver");
 var async = require("async");
 var timber = require("../timber");
+var domain = require("domain");
 
-http.globalAgent.maxSockets = 50;
+http.globalAgent.maxSockets = 100;
 
 module.exports = {
   // Write out XML data held in-memory to a text file.
@@ -33,52 +34,60 @@ module.exports = {
     })
   },
   downloadHTTP: function (linkage, path, callback) {
-    http.get(linkage, function (response) {
-      var file = fs.createWriteStream(path);
-      response.pipe(file);
+    var serverDomain = domain.create();
 
-      file.on("close", function () {
-        callback();
-      });
+    serverDomain.on("error", function (err) {
+      console.log(err);
+    })
 
-      file.on("error", function (error) {
-        callback(error);
-      });
+    serverDomain.run(function () {
+      http.get(linkage, function (res) {
+        var file = fs.createWriteStream(path);
+        res.pipe(file);
 
-      response.on("error", function (error) {
-        file.end();
-      })
+        file.on("close", function () {
+          callback();
+        });
 
-      response.shouldKeepAlive = false;
+        file.on("error", function (err) {
+          throw err;
+        })
 
-      process.on("uncaughtException", function (error) {
-        console.log("HTTP caught exception: " + error);
-        //callback(error);
+        res.on("error", function (err) {
+          file.end();
+          throw err;
+        })
+
+        res.shouldKeepAlive = false;
       })
     })
   },
   downloadHTTPS: function (linkage, path, callback) {
-    https.get(linkage, function (response) {
-      var file = fs.createWriteStream(path);
-      response.pipe(file);
+    var serverDomain = domain.create();
 
-      file.on("close", function () {
-        callback();
-      });
+    serverDomain.on("error", function (err) {
+      console.log(err);
+    })
 
-      file.on("error", function (error) {
-        callback(error);
-      });
+    serverDomain.run(function () {
+      https.get(linkage, function (res) {
+        var file = fs.createWriteStream(path);
+        res.pipe(file);
 
-      response.on("error", function (error) {
-        file.end();
-      })
+        file.on("close", function () {
+          callback();
+        });
 
-      response.shouldKeepAlive = false;
+        file.on("error", function (err) {
+          throw err;
+        })
 
-      process.on("uncaughtException", function (error) {
-        console.log("HTTPS caught exception: " + error);
-        //callback(error);
+        res.on("error", function (err) {
+          file.end();
+          throw err;
+        })
+
+        res.shouldKeepAlive = false;
       })
     })
   },
@@ -91,19 +100,35 @@ module.exports = {
   pingHTTP: function (linkage, callback) {
     var parsed = url.parse(linkage);
     var options = {method: "HEAD", host: parsed["host"], path: parsed["path"]};
-    http.get(options, function (response) {
-      if (response.statusCode === 200) callback(null, linkage);
-      else callback(new Error(linkage));
-      response.shouldKeepAlive = false;
+    var serverDomain = domain.create();
+
+    serverDomain.on("error", function (err) {
+      console.log(err);
+    })
+
+    serverDomain.run(function () {
+      http.get(options, function (res) {
+        if (res.statusCode === 200) callback(null, linkage);
+        else callback(new Error(linkage));
+        res.shouldKeepAlive = false;
+      })
     })
   },
   pingHTTPS: function (linkage, callback) {
     var parsed = url.parse(linkage);
     var options = {method: "HEAD", host: parsed["host"], path: parsed["path"]};
-    https.get(options, function (response) {
-      if (response.statusCode === 200) callback(null, linkage);
-      else callback(new Error(linkage));
-      response.shouldKeepAlive = false;
+    var serverDomain = domain.create();
+
+    serverDomain.on("error", function (err) {
+      console.log(err);
+    })
+
+    serverDomain.run(function () {
+      https.get(options, function (res) {
+        if (res.statusCode === 200) callback(null, linkage);
+        else callback(new Error(linkage));
+        res.shouldKeepAlive = false;
+      })
     })
   },
   download: function (directory, linkage, callback) {
