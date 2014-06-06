@@ -44,67 +44,47 @@ var argv = require("yargs")
   .argv;
 
 var cmdQueue = [];
-if (argv.parse) cmdQueue.push(parseCsw);
+if (argv.parse) cmdQueue.push(scrapeCsw);
 
 async.series(cmdQueue);
 
-function parseCsw () {
-  var parameters = "http://geothermaldata.org/csw?request=GetRecords&service=CSW&version=2.0.2&resultType=results&outputSchema=http://www.isotc211.org/2005/gmd&typeNames=csw:Record&elementSetName=full&maxRecords=0";
-
-  parse.scaleRequest(parameters);
-}
-
-function _parseCsw () {
-  var base = argv.out ? argv.out : path.dirname(require.main.filename);
+function scrapeCsw () {
+  var base = argv.vault 
+    ? argv.vault
+    : path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
   var vault = "ngds-archive";
-  var datastore = new utility.datastore();
-  
-  var queue = async.queue(function (getRecordUrl, callback) {
-    console.log("GET: " + getRecordUrl["host"] + getRecordUrl["path"]);
-    parse.parseCsw(getRecordUrl, function (data) {
-      data.forEach(function (item) {
-        async.waterfall([
-          function (callback) {
-            constructor(dirs, item, callback);
-          },
-          function (data, callback) {
-            processor(data, callback);
-          },
-          function (uncompressed, compressed, callback) {
-            zipper(uncompressed, compressed, callback);
-          },
-        ], function (error, result) {
-          if (error) callback(error);
-        });
+  function recursiveScrape (start) {
+    start = typeof start !== "undefined" ? start : 1;
+    var base = "http://geothermaldata.org/csw?";
+    utility.buildGetRecords(base, start, 10, function (getUrl) {
+      parse.parseCsw(getUrl, function (data) {
+        if (data) {
+          async.waterfall([
+            function (callback) {
+              constructor(dirs, data, callback);
+            },
+            function (data, callback) {
+              processor(data, callback);
+            },
+            function (uncompressed, compressed, callback) {
+              zipper(uncompressed, compressed, callback);
+            },
+          ], function (error, result) {
+            if (error) callback(error);
+          });
+        }
+        if (data["next"]) {
+          console.log(data["next"]);
+          if (data["next"] > 0)
+            recursiveScrape(data["next"]);
+        }
       })
-      callback();
-    })
-  }, 1);
-
-  queue.drain = function () {
-    if (queue.length() === 0) {      
-    }
+    })    
   }
-  
-  function startQueue () {
-    utility.doRequest(33875, 5, function (x) {
-      var base = "http://geothermaldata.org/csw?";
-      utility.buildUrl(base, x.counter, x.increment, function (getRecords) {
-        queue.push(getRecords);
-      });
-    })
-  }
-  startQueue();
-};
-/*
-function queue () {
-  var queue = async.queue(function () {}, 1);
-  function start () {
-    utility.doRequest
-  }
+  recursiveScrape();
 }
-*/
+
 function logger (dirs, datastore, callback) {
   timber.writeUrlStatus(dirs, datastore, function () {
     callback(null, datastore);
@@ -112,8 +92,7 @@ function logger (dirs, datastore, callback) {
 };
 
 function constructor (dirs, item, callback) {
-  var construct = _.map(item.linkages, function (linkage) {
-    if (linkage.length > 0) {
+  var linkages = _.map(item.linkages, function (linkage) {
       var parsedUrl = url.parse(linkage);
       var host = parsedUrl["host"];
       if (host) {
@@ -122,21 +101,24 @@ function constructor (dirs, item, callback) {
         var child = path.join(parent, item.fileId);
         var childArchive = path.join(parent, item.fileId + ".zip");
         var outXML = path.join(child, item.fileId + ".xml");
-
+        
         return {
           "host": host,
           "parent": parent,
           "parentArchive": parentArchive,
           "child": child,
           "childArchive": childArchive,
-          "outXML": outXML,
-          "fileId": item.fileId,
           "linkage": linkage,
-          "fullRecord": item.fullRecord,
+          "outXML": outXML,
         }          
       }
-    }
   });
+
+  construct = {
+    "linkages": linkages,
+    "fileId": item.fileId,
+    "fullRecord": item.fullRecord,
+  }
   callback(null, construct);
 };
 
@@ -145,19 +127,20 @@ function pingPong () {
 }
 
 function processor (construct, callback) {
-  async.each(construct, function (data) {
+  var counter = construct["linkages"].length;
+  var increment = 1;
+  async.each(construct["linkages"], function (data) {
     if (typeof data !== "undefined") {
       handle.buildDirectory(data["parent"], function (parent) {
         handle.buildDirectory(data["child"], function (child) {
-          handle.writeXML(data["outXML"], data["fullRecord"], function () {
-            if (data["linkage"].search("service=WFS") !== -1) {
-              callback();
-            } else {
-              handle.download(data["child"], data["linkage"], function () {
-                callback(null, data["child"], data["childArchive"]);
-              })
-            }
-          });
+          handle.writeXML(data["outXML"], construct["fullRecord"], function () {
+            handle.download(data["child"], data["linkage"], function () {
+              increment += 1;
+              if (increment === counter) {
+                callback(null, data["child"], data["childArchive"]);                
+              }
+            })
+          })
         })
       })
     }

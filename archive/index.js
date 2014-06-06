@@ -41,27 +41,45 @@ module.exports = {
     aws.config.loadFromPath("./awsConfig.json");
     var glacier = new aws.Glacier();
     var file = fs.readFileSync(compressed);
+    var partSize = 1024 * 1024;
+    var startTime = new Date();
+    var partNum = 0;
+    var numPartsLeft = Math.ceil(file.length / partSize);
+    var maxUploadTries = 3;
+    var params = {vaultName: vault, partSize: partSize.toString()};
 
-    var options = {
-      vaultName: vault,
-      body: file,
-    }
+    var treeHash = glacier.computeChecksums(file).treeHash;
 
-    glacier.uploadArchive(options, function (error, response) {
-      if (error) callback(error);
-      else 
-        var msg = "Uploaded :" + response.archiveId;
-        fs.rmrf(uncompressed, function (error) {
-          if (error) callback(error);
-          fs.exists(compressed, function (exists) {
-            if (exists) {
-              fs.unlink(compressed, function (error) {
-                if (error) callback(error);
-                else callback(msg);
-              })
-            }
+    glacier.initiateMultipartUpload(params, function (err, res) {
+      if (err) throw err;
+      console.log("Glacier upload ID: ", res.uploadId);
+
+      for (var i = 0; i < file.length; i += partSize) {
+        var end = Math.min(i + partSize, file.length);
+        var partParams = {
+          vaultName: vault,
+          uploadId: res.uploadId,
+          range: "bytes " + i + "-" + (end-1) + "/*",
+          body: file.slice(i, end),
+        };
+
+        glacier.uploadMultipartPart(partParams, function (uErr, data) {
+          if (uErr) throw uErr;
+          if (--numPartsLeft > 0) callback();
+
+          var doneParams = {
+            vaultName: vault,
+            uploadId: res.uploadId,
+            archiveSize: file.length.toString(),
+            checkum: treeHash,
+          }
+
+          glacier.completeMultipartUpload(doneParams, function (cErr, cData) {
+            if (cErr) callback(cErr);
+            else callback(cData);
           })
         })
+      }
     })
   },
 };

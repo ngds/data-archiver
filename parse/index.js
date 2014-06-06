@@ -14,9 +14,10 @@ var handle = require("../handle");
 var domain = require("domain");
 
 module.exports = {
-  scaleRequest: function (parameters, callback) {
+  parseCsw: function (parameters, callback) {
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
     var searchResults = new saxpath.SaXPath(saxParser, "//csw:SearchResults");
+    var fullRecord = new saxpath.SaXPath(saxParser, "//gmd:MD_Metadata");
     var serverDomain = domain.create();
 
     serverDomain.on("error", function (err) {
@@ -27,66 +28,45 @@ module.exports = {
       http.get(parameters, function (res) {
         res.pipe(saxParser);
 
-        var totalRecords;
+        var nextRecord;
 
         searchResults.on("match", function (xml) {
           var doc = new dom().parseFromString(xml);
-          var records = xpath(doc, "@numberOfRecordsMatched")[0].value
-          totalRecords = records;
+          var records = xpath(doc, "@nextRecord")[0].value
+          nextRecord = records;
         });
 
-        searchResults.on("end", function () {
-          callback(totalRecords);
+        fullRecord.on("match", function (xml) {
+          var idReg = new RegExp(/<gmd:fileIdentifier><gco:CharacterString>(.*?)<\/gco:CharacterString><\/gmd:fileIdentifier>/g);
+          var urlReg = new RegExp(/<gmd:URL>(.*?)<\/gmd:URL>/g);
+          
+          var fileId = idReg.exec(xml)[1];
+          var linkages = [];
+          var match;
+
+          while (match = urlReg.exec(xml)) {
+            linkages.push(match[1]);
+          };
+
+          callback({
+            "fileId": fileId,
+            "linkages": linkages,
+            "fullRecord": xml,
+          })
+        });
+
+        fullRecord.on("end", function () {
+          callback({"next": nextRecord});
+        });
+
+        res.on("end", function () {
+        
         });
 
         res.on("error", function (err) {
           throw err;
         })
       })
-    })
-  },
-  parseCsw: function (parameters, callback) {
-    var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
-    var fullRecord = new saxpath.SaXPath(saxParser, "//gmd:MD_Metadata");
-    var url = "http://" + parameters.host + parameters.path;
-
-    var options = {
-      "url": url,
-      "headers": {
-        "Content-type": "text/xml;charset=utf-8",
-      }      
-    };
-    
-    request.get(options)
-      .on("response", function () {})
-      .on("error", function () {
-        console.log("ERROR")
-      })
-      .pipe(saxParser);
-
-    var data = [];
-
-    fullRecord.on("match", function (xml) {
-      var idReg = new RegExp(/<gmd:fileIdentifier><gco:CharacterString>(.*?)<\/gco:CharacterString><\/gmd:fileIdentifier>/g);
-      var urlReg = new RegExp(/<gmd:URL>(.*?)<\/gmd:URL>/g);
-      
-      var fileId = idReg.exec(xml)[1];
-      var linkages = [];
-      var match;
-
-      while (match = urlReg.exec(xml)) {
-        linkages.push(match[1]);
-      };
-
-      data.push({
-        "fileId": fileId,
-        "linkages": linkages,
-        "fullRecord": xml,
-      })
-    });
-
-    fullRecord.on("end", function () {
-      callback(data);
     })
   },
   parseGetCapabilitiesWFS: function (linkage, callback) {

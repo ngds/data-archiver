@@ -79,14 +79,13 @@ module.exports = {
         });
 
         file.on("error", function (err) {
-          throw err;
-          callback();
+          callback(err);
         })
 
         res.on("error", function (err) {
           file.end();
           throw err;
-          callback();
+          callback(err);
         })
       })
     })
@@ -141,24 +140,18 @@ module.exports = {
 
           if (res.linkage.indexOf("ftp") > -1) {
             module.downloadFTP(res.linkage, output, function () {
-              if (typeof callback === "function") {
-                callback();
-              }
+              callback();
             })
           } 
           else if (res.linkage.indexOf("http") > -1 && 
                    res.linkage.indexOf("https") <= -1) {
             module.downloadHTTP(res.linkage, output, function () {
-              if (typeof callback === "function") {
-                callback();
-              }
+              callback();
             })
           }
           else if (res.linkage.indexOf("https") > -1) {
             module.downloadHTTPS(res.linkage, output, function () {
-              if (typeof callback === "function") {
-                callback();
-              }
+              callback();
             })
           }
         })
@@ -272,6 +265,8 @@ module.exports = {
     archive.bulk([
       {expand: true, cwd: uncompressed, src: ["**"]}
     ]);
-    archive.finalize();
+    archive.finalize(function (err) {
+      if (err) throw err;
+    });
   },
 };
