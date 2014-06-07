@@ -93,7 +93,7 @@ module.exports = {
   pingFTP: function (linkage, callback) {
     ftp.head(linkage, function (error) {
       if (error) callback(new Error(linkage));
-      else callback(null, linkage); 
+      else callback(null, {"res": "", "linkage": linkage}); 
     })
   },
   pingHTTP: function (linkage, callback) {
@@ -102,12 +102,12 @@ module.exports = {
     var serverDomain = domain.create();
 
     serverDomain.on("error", function (err) {
-      console.log(err);
+      callback(err);
     })
 
     serverDomain.run(function () {
       http.get(options, function (res) {
-        if (res.statusCode === 200) callback(null, linkage);
+        if (res) callback(null, {"res": res, "linkage": linkage});
         else callback(new Error(linkage));
       })
     })
@@ -118,20 +118,21 @@ module.exports = {
     var serverDomain = domain.create();
 
     serverDomain.on("error", function (err) {
-      console.log(err);
+      callback(err);
     })
 
     serverDomain.run(function () {
       https.get(options, function (res) {
-        if (res.statusCode === 200) callback(null, linkage);
+        if (res) callback(null, {"res": res, "linkage": linkage});
         else callback(new Error(linkage));
       })
     })
   },
   download: function (directory, linkage, callback) {
     var module = this;
-    module.pingPong(linkage, function (err, link) {
-      if (link) {
+    module.pingPong(linkage, function (err, res) {
+      if (res["res"].statusCode === 200) {
+        var linkage = res["linkage"];
         module.configurePaths(directory, linkage, function (res) {
 
           var directory = res.directory.replace(/(\r\n|\n|\r)/gm,"");

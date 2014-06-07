@@ -40,11 +40,12 @@ var argv = require("yargs")
 
   .alias("k", "parse")
   .describe("Parse a CSW")
-  .demand("k")
+  .demand("p")
   .argv;
 
 var cmdQueue = [];
 if (argv.parse) cmdQueue.push(scrapeCsw);
+if (argv.pingpong) cmdQueue.push(pingPong);
 
 async.series(cmdQueue);
 
@@ -91,6 +92,61 @@ function logger (dirs, datastore, callback) {
   })
 };
 
+function pingPong () {
+  var base = argv.vault 
+    ? argv.vault
+    : path.dirname(require.main.filename);
+  var dirs = utility.buildDirs(base);
+  function recursivePing (start) {
+    start = typeof start !== "undefined" ? start : 1;
+    var base = "http://geothermaldata.org/csw?";
+    utility.buildGetRecords(base, start, 100, function (getUrl) {
+      parse.parseCsw(getUrl, function (data) {
+        if (data) {
+          data["csw"] = base;
+          async.waterfall([
+            function (callback) {
+              pingLogger(dirs, data, callback);
+            },
+          ], function (error, result) {
+            //if (error) console.log(error);
+          })
+        }
+
+        if (data["next"]) {
+          console.log("NEXT: ", data["next"]);
+          if (data["next"] > 0)
+            recursivePing(data["next"]);
+        }
+      })
+    })    
+  }
+  recursivePing();
+}
+
+function pingLogger (dirs, data, callback) {
+  async.each(data.linkages, function (linkage) {
+    if (typeof linkage !== "undefined") {
+      handle.pingPong(linkage, function (err, res) {
+        if (err) callback(err);
+        if (res) {
+          var status = {
+            "time": new Date().toISOString(),
+            "csw": data["csw"],
+            "id": data["fileId"],
+            "linkage": linkage,
+            "status": res["res"]["statusCode"],
+          }
+
+          timber.writePingStatus(dirs, status, function () {
+            callback(res);
+          })
+        }
+      })
+    }
+  })
+}
+
 function constructor (dirs, item, callback) {
   var linkages = _.map(item.linkages, function (linkage) {
       var parsedUrl = url.parse(linkage);
@@ -121,10 +177,6 @@ function constructor (dirs, item, callback) {
   }
   callback(null, construct);
 };
-
-function pingPong () {
-
-}
 
 function processor (construct, callback) {
   var counter = construct["linkages"].length;
