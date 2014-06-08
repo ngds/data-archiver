@@ -109,6 +109,9 @@ module.exports = {
       http.get(options, function (res) {
         if (res) callback(null, {"res": res, "linkage": linkage});
         else callback(new Error(linkage));
+        res.on("error", function (err) {
+          callback(err);
+        })
       })
     })
   },
@@ -125,6 +128,9 @@ module.exports = {
       https.get(options, function (res) {
         if (res) callback(null, {"res": res, "linkage": linkage});
         else callback(new Error(linkage));
+        res.on("error", function (err) {
+          callback(err);
+        })
       })
     })
   },
@@ -165,17 +171,17 @@ module.exports = {
     var module = this;
     if (linkage.search("ftp") > -1) {
       module.pingFTP(linkage, function (err, res) {
-        if (err) callback(new Error);
+        if (err) callback(err);
         else callback(null, res);
       });
     } else if (linkage.search("http") > -1 && linkage.search("https") <= -1) {
       module.pingHTTP(linkage, function (err, res) {
-        if (err) callback(new Error);
+        if (err) callback(err);
         else callback(null, res);
       });
     } else if (linkage.search("https") > -1) {
       module.pingHTTPS(linkage, function (err, res) {
-        if (err) callback(new Error);
+        if (err) callback(err);
         else callback(null, res);
       })
     }

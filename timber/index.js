@@ -13,15 +13,17 @@ module.exports = {
       "error_id": path.join(dirs["status"], "error_id.csv"),
     }
 
-    fs.appendFile(logs[output], message, function () {
-      callback();
+    fs.appendFile(logs[output], message, function (err) {
+      if (err) callback(err);
+      else callback(null);
     })
   },
   writePingStatus: function (dirs, data, callback) {
-    var msg = data["csw"] + "," + data["id"] + "," 
-      + data["linkage"] + data["status"] + ",\n";
-    this.log(dirs, "ping", msg, function () {
-      callback();
+    var msg = data["time"] + "," + data["csw"] + "," + data["id"] + "," 
+      + data["linkage"] + "," + data["status"] + ",\n";
+    this.log(dirs, "ping", msg, function (err) {
+      if (err) callback(err);
+      else callback(null, data["linkage"]);
     })
   },
 }

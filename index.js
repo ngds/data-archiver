@@ -86,12 +86,6 @@ function scrapeCsw () {
   recursiveScrape();
 }
 
-function logger (dirs, datastore, callback) {
-  timber.writeUrlStatus(dirs, datastore, function () {
-    callback(null, datastore);
-  })
-};
-
 function pingPong () {
   var base = argv.vault 
     ? argv.vault
@@ -108,15 +102,12 @@ function pingPong () {
             function (callback) {
               pingLogger(dirs, data, callback);
             },
-          ], function (error, result) {
-            //if (error) console.log(error);
-          })
+          ])
         }
 
         if (data["next"]) {
           console.log("NEXT: ", data["next"]);
-          if (data["next"] > 0)
-            recursivePing(data["next"]);
+          if (data["next"] > 0) recursivePing(data["next"]);
         }
       })
     })    
@@ -138,8 +129,9 @@ function pingLogger (dirs, data, callback) {
             "status": res["res"]["statusCode"],
           }
 
-          timber.writePingStatus(dirs, status, function () {
-            callback(res);
+          timber.writePingStatus(dirs, status, function (err, res) {
+            if (err) callback(err);
+            else callback();
           })
         }
       })
