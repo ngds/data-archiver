@@ -38,4 +38,21 @@ module.exports = {
         + outputSchema + "&typeNames=" + typeNames + "&version=" + version
     })
   },
+  walkDirectory: function (path, callback) {
+    fs.readdir(path, function (err, res) {
+      if (err) callback(err);
+      else callback(res);
+    })
+  },
+  longWalk: function (parent, callback) {
+    var module = this;
+    var sanityParent = String(parent);
+    module.walkDirectory(sanityParent, function (folders) {
+      var full = _.map(folders, function (folder) {
+        var sanityFolder = String(folder);
+        return path.join(sanityParent, sanityFolder);
+      });
+      callback(full);
+    })
+  },
 }

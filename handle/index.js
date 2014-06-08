@@ -91,9 +91,9 @@ module.exports = {
     })
   },
   pingFTP: function (linkage, callback) {
-    ftp.head(linkage, function (error) {
-      if (error) callback(new Error(linkage));
-      else callback(null, {"res": "", "linkage": linkage}); 
+    ftp.head(linkage, function (err, res) {
+      if (err) callback(new Error(linkage));
+      else callback(null, {"call": {"statusCode": 200}, "linkage": linkage}); 
     })
   },
   pingHTTP: function (linkage, callback) {
@@ -107,7 +107,7 @@ module.exports = {
 
     serverDomain.run(function () {
       http.get(options, function (res) {
-        if (res) callback(null, {"res": res, "linkage": linkage});
+        if (res) callback(null, {"call": res, "linkage": linkage});
         else callback(new Error(linkage));
         res.on("error", function (err) {
           callback(err);
@@ -126,7 +126,7 @@ module.exports = {
 
     serverDomain.run(function () {
       https.get(options, function (res) {
-        if (res) callback(null, {"res": res, "linkage": linkage});
+        if (res) callback(null, {"call": res, "linkage": linkage});
         else callback(new Error(linkage));
         res.on("error", function (err) {
           callback(err);
@@ -137,7 +137,7 @@ module.exports = {
   download: function (directory, linkage, callback) {
     var module = this;
     module.pingPong(linkage, function (err, res) {
-      if (res["res"].statusCode === 200) {
+      if (res && res["call"].statusCode === 200) {
         var linkage = res["linkage"];
         module.configurePaths(directory, linkage, function (res) {
 

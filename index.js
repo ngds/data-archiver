@@ -38,14 +38,18 @@ var argv = require("yargs")
   .alias("p", "pingpong")
   .describe("p", "Ping every linkage in every metadata record")
 
+  .alias("z", "zip")
+  .describe("z", "Traverse outputs and force compression")
+
   .alias("k", "parse")
   .describe("Parse a CSW")
-  .demand("p")
+//  .demand("z")
   .argv;
 
 var cmdQueue = [];
 if (argv.parse) cmdQueue.push(scrapeCsw);
 if (argv.pingpong) cmdQueue.push(pingPong);
+if (argv.zip) cmdQueue.push(zipZap);
 
 async.series(cmdQueue);
 
@@ -86,6 +90,61 @@ function scrapeCsw () {
   recursiveScrape();
 }
 
+function zipZap () {
+  var base = argv.vault 
+    ? argv.vault
+    : path.dirname(require.main.filename);
+  var dirs = utility.buildDirs(base);
+  utility.longWalk(dirs["record"], function (parents) {
+    var parentCounter = parents.length;
+    var parentIndex = 0;
+    function recursiveCompress(parent) {
+      var parentExt = path.extname(parent);
+      if (parentExt === ".zip") {
+        parentIndex += 1;
+        if (parentIndex !== parentCounter) {
+          recursiveCompress(parents[parentIndex]);          
+        }
+      }
+      if (parentExt !== ".zip") {
+        utility.longWalk(parent, function (children) {
+          var counter = children.length;
+          var increment = 0;
+          _.each(children, function (child) {
+            var ext = path.extname(child);
+            if (ext !== ".zip") {
+              zipper(child, child + ".zip", function () {
+                increment += 1;
+                if (increment === counter) {
+                  zipper(parent, parent + ".zip", function () {
+                    parentIndex += 1;
+                    console.log("Compressed ", parent + ".zip");
+                    if (parentIndex !== parentCounter) {
+                      recursiveCompress(parents[parentIndex]);
+                    }
+                  })
+                }
+              })
+            } else {
+              increment += 1;
+              if (increment === counter) {
+                zipper(parent, parent + ".zip", function () {
+                  parentIndex += 1;
+                  console.log("Compressed ", parent + ".zip");
+                  if (parentIndex !== parentCounter) {
+                    recursiveCompress(parents[parentIndex]);
+                  }
+                })
+              }
+            }
+          })
+        })        
+      }
+    }
+    recursiveCompress(parents[0]);
+  }) 
+}
+
 function pingPong () {
   var base = argv.vault 
     ? argv.vault
@@ -115,6 +174,8 @@ function pingPong () {
   recursivePing();
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
 function pingLogger (dirs, data, callback) {
   async.each(data.linkages, function (linkage) {
     if (typeof linkage !== "undefined") {
