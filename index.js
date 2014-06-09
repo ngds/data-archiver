@@ -41,6 +41,9 @@ var argv = require("yargs")
   .alias("z", "zip")
   .describe("z", "Traverse outputs and force compression")
 
+  .alias("g", "glacier")
+  .describe("g", "Stream compressed directory to AWS Glacier")
+
   .alias("k", "parse")
   .describe("Parse a CSW")
 //  .demand("z")
@@ -50,6 +53,7 @@ var cmdQueue = [];
 if (argv.parse) cmdQueue.push(scrapeCsw);
 if (argv.pingpong) cmdQueue.push(pingPong);
 if (argv.zip) cmdQueue.push(zipZap);
+if (argv.glacier) cmdQueue.push(awsGlacier);
 
 async.series(cmdQueue);
 
@@ -174,6 +178,20 @@ function pingPong () {
   recursivePing();
 }
 
+function awsGlacier () {
+  var vault = "ngds-archive";
+  var base = argv.vault
+    ? argv.vault
+    : path.dirname(require.main.filename);
+  var dirs = utility.buildDirs(base);
+  utility.longWalk(dirs["record"], function (zips) {
+    async.each(zips, function (zip) {
+      archiver.uploadToGlacier(zip, vault, function (res) {
+        console.log(res);
+      })
+    })
+  })
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 function pingLogger (dirs, data, callback) {

@@ -37,7 +37,7 @@ module.exports = {
       }
     });
   },
-  uploadToGlacier: function (uncompressed, compressed, vault, callback) {
+  uploadToGlacier: function (compressed, vault, callback) {
     aws.config.loadFromPath("./awsConfig.json");
     var glacier = new aws.Glacier();
     var file = fs.readFileSync(compressed);
@@ -50,33 +50,45 @@ module.exports = {
 
     var treeHash = glacier.computeChecksums(file).treeHash;
 
-    glacier.initiateMultipartUpload(params, function (err, res) {
-      if (err) throw err;
-      console.log("Glacier upload ID: ", res.uploadId);
+    console.log("Initiating upload to ", vault);
+    glacier.initiateMultipartUpload(params, function (mpErr, multipart) {
+      if (mpErr) { console.log("Error! ", mpErr); callback(mpErr); };
+      console.log("Glacier upload ID: ", multipart.uploadId);
 
       for (var i = 0; i < file.length; i += partSize) {
         var end = Math.min(i + partSize, file.length);
         var partParams = {
           vaultName: vault,
-          uploadId: res.uploadId,
+          uploadId: multipart.uploadId,
           range: "bytes " + i + "-" + (end-1) + "/*",
           body: file.slice(i, end),
         };
 
-        glacier.uploadMultipartPart(partParams, function (uErr, data) {
-          if (uErr) throw uErr;
+        console.log("Uploading part ", i, "=", partParams.range);
+        glacier.uploadMultipartPart(partParams, function (multiErr, mData) {
+          if (multiErr) callback(multiErr);
+          console.log("Completed part ", this.request.params.range);
           if (--numPartsLeft > 0) callback();
 
           var doneParams = {
             vaultName: vault,
-            uploadId: res.uploadId,
+            uploadId: multipart.uploadId,
             archiveSize: file.length.toString(),
-            checkum: treeHash,
+            checksum: treeHash,
           }
 
-          glacier.completeMultipartUpload(doneParams, function (cErr, cData) {
-            if (cErr) callback(cErr);
-            else callback(cData);
+          console.log("Completing upload...");
+          glacier.completeMultipartUpload(doneParams, function (err, data) {
+            if (err) {
+              console.log("An error ocurred while uploading the archive");
+              callback(err);
+            } else { 
+              var delta = (new Date() - startTime) / 1000;
+              console.log("Completed upload in", delta, "seconds");
+              console.log("Archive ID:", data.archiveId);
+              console.log("Checksum:", data.checksum);
+              callback(data);
+            }
           })
         })
       }
