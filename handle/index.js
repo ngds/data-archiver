@@ -264,7 +264,12 @@ module.exports = {
       })
     });
 
+    zipped.on("error", function (err) {
+      callback(err);
+    });
+
     archive.on("error", function (error) {
+      zipped.end();
       throw error;
     });
 
@@ -273,6 +278,7 @@ module.exports = {
       {expand: true, cwd: uncompressed, src: ["**"]}
     ]);
     archive.finalize(function (err) {
+      zipped.end();
       if (err) throw err;
     });
   },

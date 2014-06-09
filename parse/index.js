@@ -101,7 +101,9 @@ module.exports = {
       }
     });
   },
-  parseWellLogsWFS: function (linkage, directory, callback) {
+  parseWellLogsWFS: function (res, callback) {
+    var linkage = res.linkage;
+    var directory = res.directory;
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
     var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
     
@@ -174,28 +176,38 @@ module.exports = {
       }
     }) 
   },
-  parseGetFeaturesWFS: function (linkage, directory, file, callback) {
+  parseGetFeaturesWFS: function (res, callback) {
+    var directory = res.directory;
+    var linkage = res.linkage;
+    var file = res.file;
+    var serverDomain = domain.create();
+
     fs.exists(directory, function (exists) {
       var outputXML = path.join(directory, file + ".xml");
-      http.get(linkage, function (response) {
-        var file = fs.createWriteStream(outputXML);
-        response.pipe(file);
 
-        file.on("close", function () {
-          callback(outputXML);
-        })
+      serverDomain.on("error", function (err) {
+        console.log(err);
+        callback();
+      });
 
-        file.on("error", function (error) {
-          callback(error);
-        })
+      serverDomain.run(function () {
+        http.get(linkage, function (res) {
+          var file = fs.createWriteStream(outputXML);
+          res.pipe(file);
 
-        response.on("error", function (error) {
-          file.end();
-        })
+          file.on("close", function () {
+            callback(outputXML);
+          })
 
-        process.on("uncaughtException", function (error) {
-          console.log("EXCEPTION: " + error + linkage);
-        })
+          file.on("error", function (err) {
+            callback(err);
+          })
+
+          res.on("error", function (err) {
+            file.end();
+            callback();
+          })
+        })        
       })
     })
   },

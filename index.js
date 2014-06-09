@@ -249,6 +249,31 @@ function constructor (dirs, item, callback) {
   callback(null, construct);
 };
 
+function processWFS (dir, linkage, callback) {
+  parse.parseGetCapabilitiesWFS(linkage, function (wfs) {
+    var counter = wfs.length;
+    var increment = 0;
+    async.each(wfs, function (getWfs) {
+      handle.configurePaths(dir, getWfs, function (res) {
+        var urlQuery = url.parse(getWfs)["query"];
+        var typeName = querystring.parse(urlQuery)["typeNames"];
+        if (typeName === "aasg:WellLog") {
+          parse.parseWellLogsWFS(res, function (data) {
+            callback(data);
+          })
+        } else {
+          parse.parseGetFeaturesWFS(res, function () {
+            increment += 1;
+            if (increment === counter) {
+              callback();
+            }
+          })
+        }        
+      })
+    })
+  })
+}
+
 function processor (construct, callback) {
   var counter = construct["linkages"].length;
   var increment = 1;
@@ -257,12 +282,27 @@ function processor (construct, callback) {
       handle.buildDirectory(data["parent"], function (parent) {
         handle.buildDirectory(data["child"], function (child) {
           handle.writeXML(data["outXML"], construct["fullRecord"], function () {
-            handle.download(data["child"], data["linkage"], function () {
-              increment += 1;
-              if (increment === counter) {
-                callback(null, data["child"], data["childArchive"]);                
-              }
-            })
+            if (data["linkage"].search("service=WFS") !== -1) {
+              processWFS(data["child"], data["linkage"], function (res) {
+                if (res) {
+                  var wfsXML = path.join(res["dir"], res["xmlId"]);
+                  handle.writeXML(wfsXML, res["xml"], function () {
+                    async.each(res["linkages"], function (linkage) {
+                      handle.download(res["dir"], linkage, function () {
+
+                      })
+                    })
+                  })                  
+                }
+              })
+            } else {
+              handle.download(data["child"], data["linkage"], function () {
+                increment += 1;
+                if (increment === counter) {
+                  callback(null, data["child"], data["childArchive"]);                
+                }
+              })              
+            }
           })
         })
       })
