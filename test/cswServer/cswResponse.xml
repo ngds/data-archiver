@@ -1,1165 +1,314 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2">
-<csw:SearchStatus timestamp="2014-05-30T10:29:12-07:00"/>
-<csw:SearchResults elementSet="full" nextRecord="4" numberOfRecordsMatched="8225" numberOfRecordsReturned="3" recordSchema="http://www.isotc211.org/2005/gmd">
-<gmd:MD_Metadata xmlns="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gmi="http://www.isotc211.org/2005/gmi" xmlns:gml="http://www.opengis.net/gml" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:srv="http://www.isotc211.org/2005/srv" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.isotc211.org/2005/gmd http://schemas.opengis.net/csw/2.0.2/profiles/apiso/1.0.0/apiso.xsd">
-<gmd:fileIdentifier>
-<gco:CharacterString>f45943f40af01ba4512004cf04f47600</gco:CharacterString>
-</gmd:fileIdentifier>
-<gmd:language>
-<gco:CharacterString>eng</gco:CharacterString>
-</gmd:language>
-<gmd:characterSet>
-<gmd:MD_CharacterSetCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8">UTF-8</gmd:MD_CharacterSetCode>
-</gmd:characterSet>
-<gmd:hierarchyLevel>
-<gmd:MD_ScopeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_ScopeCode" codeListValue="Dataset">Dataset</gmd:MD_ScopeCode>
-</gmd:hierarchyLevel>
-<gmd:hierarchyLevelName>
-<gco:CharacterString>collection:dataset</gco:CharacterString>
-</gmd:hierarchyLevelName>
-<gmd:contact>
+<!-- pycsw 1.8.0 -->
+<csw:GetRecordsResponse xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:inspire_common="http://inspire.ec.europa.eu/schemas/common/1.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dct="http://purl.org/dc/terms/" xmlns:ows="http://www.opengis.net/ows" xmlns:apiso="http://www.opengis.net/cat/csw/apiso/1.0" xmlns:gml="http://www.opengis.net/gml" xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:srv="http://www.isotc211.org/2005/srv" xmlns:ogc="http://www.opengis.net/ogc" xmlns:fgdc="http://www.opengis.net/cat/csw/csdgm" xmlns:inspire_ds="http://inspire.ec.europa.eu/schemas/inspire_ds/1.0" xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:os="http://a9.com/-/spec/opensearch/1.1/" xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope" xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9" version="2.0.2" xsi:schemaLocation="http://www.opengis.net/cat/csw/2.0.2 http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd"><csw:SearchStatus timestamp="2014-06-09T20:11:02Z"/><csw:SearchResults nextRecord="2" numberOfRecordsMatched="38508" numberOfRecordsReturned="1" recordSchema="http://www.isotc211.org/2005/gmd" elementSet="full"><gmd:MD_Metadata xsi:schemaLocation="http://www.isotc211.org/2005/gmd http://schemas.opengis.net/csw/2.0.2/profiles/apiso/1.0.0/apiso.xsd">
+  <gmd:fileIdentifier>
+    <gco:CharacterString>b0f4ce5e-91ab-30db-9292-f146dc853891</gco:CharacterString>
+  </gmd:fileIdentifier>
+  <gmd:language>
+    <gco:CharacterString>eng</gco:CharacterString>
+  </gmd:language>
+  <gmd:characterSet>
+    <gmd:MD_CharacterSetCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8">UTF-8</gmd:MD_CharacterSetCode>
+  </gmd:characterSet>
+  <gmd:hierarchyLevel>
+    <gmd:MD_ScopeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_ScopeCode" codeListValue="Dataset">Dataset</gmd:MD_ScopeCode>
+  </gmd:hierarchyLevel>
+  <gmd:hierarchyLevelName>
+    <gco:CharacterString>Document</gco:CharacterString>
+  </gmd:hierarchyLevelName>
+  <gmd:contact>
+   <gmd:CI_ResponsibleParty>
+      <gmd:individualName>
+        <gco:CharacterString>Maria Richards</gco:CharacterString>
+      </gmd:individualName>
+      <gmd:organisationName>
+        <gco:CharacterString>SMU Geothermal Laboratory, Roy M. Huffington Department of Earth Sciences</gco:CharacterString>
+      </gmd:organisationName>
+      <gmd:contactInfo>
+        <gmd:CI_Contact>
+          <gmd:phone>
+            <gmd:CI_Telephone>
+              <gmd:voice>
+                <gco:CharacterString>214-768-1975</gco:CharacterString>
+              </gmd:voice>
+            </gmd:CI_Telephone>
+          </gmd:phone>
+          <gmd:address>
+            <gmd:CI_Address>
+              <gmd:deliveryPoint>
+                <gco:CharacterString>P.O. Box 750395</gco:CharacterString>
+              </gmd:deliveryPoint>
+              <gmd:city>
+                <gco:CharacterString>Dallas</gco:CharacterString>
+              </gmd:city>
+              <gmd:administrativeArea>
+                <gco:CharacterString>TX</gco:CharacterString>
+              </gmd:administrativeArea>
+              <gmd:postalCode>
+                <gco:CharacterString>75275-0395</gco:CharacterString>
+              </gmd:postalCode>
+              <gmd:electronicMailAddress>
+                <gco:CharacterString>mrichard@smu.edu</gco:CharacterString>
+              </gmd:electronicMailAddress>
+            </gmd:CI_Address>
+          </gmd:address>
+        </gmd:CI_Contact>
+      </gmd:contactInfo>
+      <gmd:role>
+        <gmd:CI_RoleCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
+      </gmd:role>
+    </gmd:CI_ResponsibleParty>
+  </gmd:contact>
+  <gmd:dateStamp>
+    <gco:DateTime>2014-04-29T19:05:43Z</gco:DateTime>
+  </gmd:dateStamp>
+  <gmd:metadataStandardName>
+    <gco:CharacterString>ISO-USGIN</gco:CharacterString>
+  </gmd:metadataStandardName>
+  <gmd:metadataStandardVersion>
+    <gco:CharacterString>1.2</gco:CharacterString>
+  </gmd:metadataStandardVersion>
+  <gmd:dataSetURI>
+    <gco:CharacterString/>
+  </gmd:dataSetURI>
+  <gmd:identificationInfo>
+    <gmd:MD_DataIdentification>
+      <gmd:citation>
+        <gmd:CI_Citation>
+          <gmd:title>
+            <gco:CharacterString>Geopressured geothermal well testing. [Abstract and figures only]</gco:CharacterString>
+          </gmd:title>
+          <gmd:date>
+            <gmd:CI_Date>
+              <gmd:date>
+                <!--
+                    The element here must be a gco:DateTime in the form YYYY-MM-DDThh:mm:ssZ
+                    If we do not know hh:mm:ss then set them to zeros (midnight)
+                    If we only know YYYY-MM then set DD to 01
+                    If we only know YYYY then set MM and DD to 01
+                    If we don't know the YYYY then set it to 1900-01-01 and the time to zeros (midnight)
+                -->
+                <gco:DateTime>1983-02-01T00:00:00Z</gco:DateTime>
+              </gmd:date>
+              <gmd:dateType>
+                <gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication">publication</gmd:CI_DateTypeCode>
+              </gmd:dateType>
+            </gmd:CI_Date>
+          </gmd:date>
+          <gmd:citedResponsibleParty>
 <gmd:CI_ResponsibleParty>
 <gmd:individualName>
-<gco:CharacterString>Celia Coleman</gco:CharacterString>
+<gco:CharacterString>Goldsberry, F.L.</gco:CharacterString>
 </gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Arizona Geological Survey</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
 <gmd:contactInfo>
 <gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>520-209-4141</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
 <gmd:address>
 <gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>416 W Congress St Ste 100</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Tucson</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>AZ</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>85701</gco:CharacterString>
-</gmd:postalCode>
 <gmd:electronicMailAddress>
-<gco:CharacterString>celia.coleman@azgs.az.gov</gco:CharacterString>
+<gco:CharacterString>metadata@smu.edu</gco:CharacterString>
 </gmd:electronicMailAddress>
 </gmd:CI_Address>
 </gmd:address>
 </gmd:CI_Contact>
 </gmd:contactInfo>
 <gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
-</gmd:role>
-</gmd:CI_ResponsibleParty>
-</gmd:contact>
-<gmd:dateStamp>
-<gco:DateTime>2014-05-19T16:24:41Z</gco:DateTime>
-</gmd:dateStamp>
-<gmd:metadataStandardName>
-<gco:CharacterString>ISO-USGIN</gco:CharacterString>
-</gmd:metadataStandardName>
-<gmd:metadataStandardVersion>
-<gco:CharacterString>1.2</gco:CharacterString>
-</gmd:metadataStandardVersion>
-<gmd:dataSetURI>
-<gco:CharacterString/>
-</gmd:dataSetURI>
-<gmd:identificationInfo>
-<gmd:MD_DataIdentification>
-<gmd:citation>
-<gmd:CI_Citation>
-<gmd:title>
-<gco:CharacterString>Oregon Physical Samples</gco:CharacterString>
-</gmd:title>
-<gmd:date>
-<gmd:CI_Date>
-<gmd:date>
-<gco:DateTime>2013-01-25T00:00:00</gco:DateTime>
-</gmd:date>
-<gmd:dateType>
-<gmd:CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication">publication</gmd:CI_DateTypeCode>
-</gmd:dateType>
-</gmd:CI_Date>
-</gmd:date>
-<gmd:citedResponsibleParty>
-<gmd:CI_ResponsibleParty>
-<gmd:individualName>
-<gco:CharacterString>Clark Niewendorp</gco:CharacterString>
-</gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Oregon Department of Geology and Mineral Industries</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
-<gmd:contactInfo>
-<gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>971-673-1540</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
-<gmd:address>
-<gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>800 NE Oregon St. #28, Suite 965</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Portland</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>OR</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>97232</gco:CharacterString>
-</gmd:postalCode>
-<gmd:electronicMailAddress>
-<gco:CharacterString>clark.niewendorp@dogami.state.or.us</gco:CharacterString>
-</gmd:electronicMailAddress>
-</gmd:CI_Address>
-</gmd:address>
-</gmd:CI_Contact>
-</gmd:contactInfo>
-<gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
+<gmd:CI_RoleCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="author">author</gmd:CI_RoleCode>
 </gmd:role>
 </gmd:CI_ResponsibleParty>
 </gmd:citedResponsibleParty>
-</gmd:CI_Citation>
-</gmd:citation>
-<gmd:abstract>
-<gco:CharacterString>This resource is a compilation of physical samples compiled by the Oregon Department of Geology and Mineral Industries. The data is available in the following formats: web feature service, web map service, ESRI service and an Excel workbook for download. The workbook contains 8 worksheets, including information about the template, notes related to revisions of the template, resource provider information, the data, a field list (to assist data mapping), a valid terms worksheet, and a correlation chart with SESAR fields, EarthChem fields, and others. This data was provided by the Oregon Department of Geology and Mineral Industries and made available for distribution through the AASG National Geothermal Data System.</gco:CharacterString>
-</gmd:abstract>
-<gmd:status>
-<gmd:MD_ProgressCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_ProgressCode" codeListValue="completed">completed</gmd:MD_ProgressCode>
-</gmd:status>
-<gmd:descriptiveKeywords>
+        </gmd:CI_Citation>
+      </gmd:citation>
+      <gmd:abstract>
+        <gco:CharacterString>No Publication Abstract is Available</gco:CharacterString>
+      </gmd:abstract>
+      <gmd:status>
+        <gmd:MD_ProgressCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_ProgressCode" codeListValue="completed">completed</gmd:MD_ProgressCode>
+      </gmd:status>
+      <!-- If there are any keywords associated with this publication's bibliography include them in a block like this.
+      <gmd:descriptiveKeywords>
+        <gmd:MD_Keywords>
+          <gmd:keyword> Repeat this element for each keyword phrase
+            <gco:CharacterString>Single key word phrase</gco:CharacterString>
+          </gmd:keyword>
+          <gmd:type>
+            <gmd:MD_KeywordTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme">theme</gmd:MD_KeywordTypeCode>
+          </gmd:type>
+        </gmd:MD_Keywords>
+      </gmd:descriptiveKeywords>
+      -->
+      <gmd:descriptiveKeywords>
 <gmd:MD_Keywords>
 <gmd:keyword>
-<gco:CharacterString>usgincm:physical sample</gco:CharacterString>
+<gco:CharacterString>15 GEOTHERMAL ENERGY</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>geothermal</gco:CharacterString>
+<gco:CharacterString>GEOPRESSURED SYSTEMS</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>north america</gco:CharacterString>
+<gco:CharacterString>GEOTHERMAL WELLS</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>physical sample</gco:CharacterString>
+<gco:CharacterString>TESTING</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>radiometric age date</gco:CharacterString>
+<gco:CharacterString>EXPLORATORY WELLS</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>oregon</gco:CharacterString>
+<gco:CharacterString>FEASIBILITY STUDIES</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>geophysics</gco:CharacterString>
+<gco:CharacterString>GEOTHERMAL EXPLORATION</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>geochronology</gco:CharacterString>
+<gco:CharacterString>LOUISIANA</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>sample</gco:CharacterString>
+<gco:CharacterString>TEXAS</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>geothermal system</gco:CharacterString>
+<gco:CharacterString>ENERGY SYSTEMS</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>usginres:collection:dataset</gco:CharacterString>
+<gco:CharacterString>EXPLORATION</gco:CharacterString>
 </gmd:keyword>
 <gmd:keyword>
-<gco:CharacterString>usginres:document:image:stillimage:human-generated image:map</gco:CharacterString>
+<gco:CharacterString>FEDERAL REGION VI</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>NORTH AMERICA</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>USA</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>WELLS</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>Geothermal Legacy</gco:CharacterString>
 </gmd:keyword>
 <gmd:type>
 <gmd:MD_KeywordTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme">theme</gmd:MD_KeywordTypeCode>
 </gmd:type>
 </gmd:MD_Keywords>
 </gmd:descriptiveKeywords>
-<gmd:descriptiveKeywords>
-<gmd:MD_Keywords>
-<gmd:keyword>
-<gco:CharacterString>Oregon</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>Oregon Department of Geology and Mineral Resources </gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>Physical Sample</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>Downloadable Files</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>WFS Services</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>WMS Services</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>ESRI Services</gco:CharacterString>
-</gmd:keyword>
-<gmd:thesaurusName xlink:href="/metadata/collection/">
-<gmd:CI_Citation>
-<gmd:title>
-<gco:CharacterString>Server Collections</gco:CharacterString>
-</gmd:title>
-<gmd:date>
-<gmd:CI_Date>
-<gmd:date>
-<gco:Date>2012-06-06</gco:Date>
-</gmd:date>
-<gmd:dateType>
-<gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication"/>
-</gmd:dateType>
-</gmd:CI_Date>
-</gmd:date>
-</gmd:CI_Citation>
-</gmd:thesaurusName>
-</gmd:MD_Keywords>
-</gmd:descriptiveKeywords>
-<gmd:language>
-<gco:CharacterString>eng</gco:CharacterString>
-</gmd:language>
-<gmd:characterSet>
-<gmd:MD_CharacterSetCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode " codeListValue="utf8">UTF-8</gmd:MD_CharacterSetCode>
-</gmd:characterSet>
-<gmd:topicCategory>
-<gmd:MD_TopicCategoryCode>geoscientificInformation</gmd:MD_TopicCategoryCode>
-</gmd:topicCategory>
-<gmd:extent>
-<gmd:EX_Extent>
-<gmd:geographicElement>
-<gmd:EX_GeographicBoundingBox>
-<gmd:westBoundLongitude>
-<gco:Decimal>-124.98046875</gco:Decimal>
-</gmd:westBoundLongitude>
-<gmd:eastBoundLongitude>
-<gco:Decimal>-116.36718750001</gco:Decimal>
-</gmd:eastBoundLongitude>
-<gmd:southBoundLatitude>
-<gco:Decimal>41.902277040964</gco:Decimal>
-</gmd:southBoundLatitude>
-<gmd:northBoundLatitude>
-<gco:Decimal>46.558860303117</gco:Decimal>
-</gmd:northBoundLatitude>
-</gmd:EX_GeographicBoundingBox>
-</gmd:geographicElement>
-</gmd:EX_Extent>
-</gmd:extent>
-</gmd:MD_DataIdentification>
-</gmd:identificationInfo>
-<gmd:distributionInfo>
-<gmd:MD_Distribution>
-<gmd:distributor>
-<gmd:MD_Distributor>
-<gmd:distributorContact>
-<gmd:CI_ResponsibleParty>
-<gmd:individualName>
-<gco:CharacterString>Paul Ferro</gco:CharacterString>
-</gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Oregon Department of Geology and Mineral Industries</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
-<gmd:contactInfo>
-<gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>971-673-1540</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
-<gmd:address>
-<gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>800 NE Oregon St. #28, Suite 965</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Portland</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>OR</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>97232</gco:CharacterString>
-</gmd:postalCode>
-<gmd:electronicMailAddress>
-<gco:CharacterString>paul.ferro@dogami.state.or.us</gco:CharacterString>
-</gmd:electronicMailAddress>
-</gmd:CI_Address>
-</gmd:address>
-</gmd:CI_Contact>
-</gmd:contactInfo>
-<gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
-</gmd:role>
-</gmd:CI_ResponsibleParty>
-</gmd:distributorContact>
-</gmd:MD_Distributor>
-</gmd:distributor>
-<gmd:distributor>
-<gmd:MD_Distributor>
-<gmd:distributorContact>
-<gmd:CI_ResponsibleParty>
-<gmd:individualName>
-<gco:CharacterString>No Name Was Given</gco:CharacterString>
-</gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Arizona Geological Survey</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
-<gmd:contactInfo>
-<gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>520-770-3500</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
-<gmd:address>
-<gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>416 W. Congress St., Suite 100</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Tucson</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>AZ</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>85701</gco:CharacterString>
-</gmd:postalCode>
-<gmd:electronicMailAddress>
-<gco:CharacterString>metadata@usgin.org</gco:CharacterString>
-</gmd:electronicMailAddress>
-</gmd:CI_Address>
-</gmd:address>
-</gmd:CI_Contact>
-</gmd:contactInfo>
-<gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
-</gmd:role>
-</gmd:CI_ResponsibleParty>
-</gmd:distributorContact>
-</gmd:MD_Distributor>
-</gmd:distributor>
-<gmd:transferOptions>
-<gmd:MD_DigitalTransferOptions id="http___www_oregongeology_org_arcgis_rest_services_Public_ORPhysicalSamples_MapServer">
-<gmd:onLine>
-<gmd:CI_OnlineResource>
-<gmd:linkage>
-<gmd:URL>http://www.oregongeology.org/arcgis/rest/services/Public/ORPhysicalSamples/MapServer</gmd:URL>
-</gmd:linkage>
-<gmd:protocol>
-<gco:CharacterString>ESRI</gco:CharacterString>
-</gmd:protocol>
-<gmd:name>
-<gco:CharacterString>Service Description</gco:CharacterString>
-</gmd:name>
-<gmd:function>
-<gmd:CI_OnLineFunctionCode codeList="http://www.fgdc.gov/nap/metadata/register/registerItemClasses.html#IC_88" codeListValue="381">webService</gmd:CI_OnLineFunctionCode>
-</gmd:function>
-</gmd:CI_OnlineResource>
-</gmd:onLine>
-</gmd:MD_DigitalTransferOptions>
-</gmd:transferOptions>
-<gmd:transferOptions>
-<gmd:MD_DigitalTransferOptions id="http___www_oregongeology_org_arcgis_services_Public_ORPhysicalSamples_MapServer_WMSServer_request_GetCapabilities_service_WMS">
-<gmd:onLine>
-<gmd:CI_OnlineResource>
-<gmd:linkage>
-<gmd:URL>http://www.oregongeology.org/arcgis/services/Public/ORPhysicalSamples/MapServer/WMSServer?request=GetCapabilities&amp;service=WMS</gmd:URL>
-</gmd:linkage>
-<gmd:protocol>
-<gco:CharacterString>OGC:WMS</gco:CharacterString>
-</gmd:protocol>
-<gmd:name>
-<gco:CharacterString>Service Description</gco:CharacterString>
-</gmd:name>
-<gmd:description>
-<gco:CharacterString> parameters: {"layers": "OGC:WMS"}</gco:CharacterString>
-</gmd:description>
-<gmd:function>
-<gmd:CI_OnLineFunctionCode codeList="http://www.fgdc.gov/nap/metadata/register/registerItemClasses.html#IC_88" codeListValue="381">webService</gmd:CI_OnLineFunctionCode>
-</gmd:function>
-</gmd:CI_OnlineResource>
-</gmd:onLine>
-</gmd:MD_DigitalTransferOptions>
-</gmd:transferOptions>
-<gmd:transferOptions>
-<gmd:MD_DigitalTransferOptions id="http___www_oregongeology_org_arcgis_services_Public_ORPhysicalSamples_MapServer_WFSServer_request_GetCapabilities_service_WFS">
-<gmd:onLine>
-<gmd:CI_OnlineResource>
-<gmd:linkage>
-<gmd:URL>http://www.oregongeology.org/arcgis/services/Public/ORPhysicalSamples/MapServer/WFSServer?request=GetCapabilities&amp;service=WFS</gmd:URL>
-</gmd:linkage>
-<gmd:protocol>
-<gco:CharacterString>OGC:WFS</gco:CharacterString>
-</gmd:protocol>
-<gmd:name>
-<gco:CharacterString>Service Description</gco:CharacterString>
-</gmd:name>
-<gmd:description>
-<gco:CharacterString> parameters: {"featureTypes": "OGC:WFS"}</gco:CharacterString>
-</gmd:description>
-<gmd:function>
-<gmd:CI_OnLineFunctionCode codeList="http://www.fgdc.gov/nap/metadata/register/registerItemClasses.html#IC_88" codeListValue="381">webService</gmd:CI_OnLineFunctionCode>
-</gmd:function>
-</gmd:CI_OnlineResource>
-</gmd:onLine>
-</gmd:MD_DigitalTransferOptions>
-</gmd:transferOptions>
-<gmd:transferOptions>
-<gmd:MD_DigitalTransferOptions id="http___notifications_usgin_org_">
-<gmd:onLine>
-<gmd:CI_OnlineResource>
-<gmd:linkage>
-<gmd:URL>http://notifications.usgin.org/</gmd:URL>
-</gmd:linkage>
-<gmd:name>
-<gco:CharacterString>NGDS RSS feed for services notifications</gco:CharacterString>
-</gmd:name>
-<gmd:function>
-<gmd:CI_OnLineFunctionCode codeList="http://www.fgdc.gov/nap/metadata/register/registerItemClasses.html#IC_88" codeListValue="375">download</gmd:CI_OnLineFunctionCode>
-</gmd:function>
-</gmd:CI_OnlineResource>
-</gmd:onLine>
-</gmd:MD_DigitalTransferOptions>
-</gmd:transferOptions>
-<gmd:transferOptions>
-<gmd:MD_DigitalTransferOptions id="http___repository_stategeothermaldata_org_metadata_record_f45943f40af01ba4512004cf04f47600_file_orphysicalsamples_20140425_repo_zip">
-<gmd:onLine>
-<gmd:CI_OnlineResource>
-<gmd:linkage>
-<gmd:URL>http://repository.stategeothermaldata.org/metadata/record/f45943f40af01ba4512004cf04f47600/file/orphysicalsamples_20140425_repo.zip</gmd:URL>
-</gmd:linkage>
-<gmd:name>
-<gco:CharacterString>Zipped Excel Workbook containing Physcial Samples Data from the State of Oregon</gco:CharacterString>
-</gmd:name>
-<gmd:function>
-<gmd:CI_OnLineFunctionCode codeList="http://www.fgdc.gov/nap/metadata/register/registerItemClasses.html#IC_88" codeListValue="375">download</gmd:CI_OnLineFunctionCode>
-</gmd:function>
-</gmd:CI_OnlineResource>
-</gmd:onLine>
-</gmd:MD_DigitalTransferOptions>
-</gmd:transferOptions>
-</gmd:MD_Distribution>
-</gmd:distributionInfo>
-<gmd:metadataMaintenance>
-<gmd:MD_MaintenanceInformation>
-<gmd:maintenanceAndUpdateFrequency>
-<gmd:MD_MaintenanceFrequencyCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode" codeListValue="IRREGULAR">irregular
-								</gmd:MD_MaintenanceFrequencyCode>
-</gmd:maintenanceAndUpdateFrequency>
-<gmd:maintenanceNote>
-<gco:CharacterString>This metadata record has been processed by the iso-19115-to-usgin-19115-data XSLT to ensure that all mandatory content for USGIN profile has been added.2013-11-04T12:00:00</gco:CharacterString>
-</gmd:maintenanceNote>
-</gmd:MD_MaintenanceInformation>
-</gmd:metadataMaintenance>
-</gmd:MD_Metadata>
-<gmd:MD_Metadata xmlns="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gmi="http://www.isotc211.org/2005/gmi" xmlns:gml="http://www.opengis.net/gml" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:srv="http://www.isotc211.org/2005/srv" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.isotc211.org/2005/gmd http://schemas.opengis.net/csw/2.0.2/profiles/apiso/1.0.0/apiso.xsd">
-<gmd:fileIdentifier>
-<gco:CharacterString>f45943f40af01ba4512004cf04f3f6d0</gco:CharacterString>
-</gmd:fileIdentifier>
-<gmd:language>
-<gco:CharacterString>eng</gco:CharacterString>
-</gmd:language>
-<gmd:characterSet>
-<gmd:MD_CharacterSetCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8">UTF-8</gmd:MD_CharacterSetCode>
-</gmd:characterSet>
-<gmd:hierarchyLevel>
-<gmd:MD_ScopeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_ScopeCode" codeListValue="Dataset">Dataset</gmd:MD_ScopeCode>
-</gmd:hierarchyLevel>
-<gmd:hierarchyLevelName>
-<gco:CharacterString>collection:dataset:catalog</gco:CharacterString>
-</gmd:hierarchyLevelName>
-<gmd:contact>
-<gmd:CI_ResponsibleParty>
-<gmd:individualName>
-<gco:CharacterString>Celia Coleman</gco:CharacterString>
-</gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Arizona Geological Survey</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
-<gmd:contactInfo>
-<gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>520-209-4141</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
-<gmd:address>
-<gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>416 W Congress St Ste 100</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Tucson</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>AZ</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>85701</gco:CharacterString>
-</gmd:postalCode>
-<gmd:electronicMailAddress>
-<gco:CharacterString>celia.coleman@azgs.az.gov</gco:CharacterString>
-</gmd:electronicMailAddress>
-</gmd:CI_Address>
-</gmd:address>
-</gmd:CI_Contact>
-</gmd:contactInfo>
-<gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
-</gmd:role>
-</gmd:CI_ResponsibleParty>
-</gmd:contact>
-<gmd:dateStamp>
-<gco:DateTime>2014-05-09T14:58:42Z</gco:DateTime>
-</gmd:dateStamp>
-<gmd:metadataStandardName>
-<gco:CharacterString>ISO-USGIN</gco:CharacterString>
-</gmd:metadataStandardName>
-<gmd:metadataStandardVersion>
-<gco:CharacterString>1.2</gco:CharacterString>
-</gmd:metadataStandardVersion>
-<gmd:dataSetURI>
-<gco:CharacterString/>
-</gmd:dataSetURI>
-<gmd:identificationInfo>
-<gmd:MD_DataIdentification>
-<gmd:citation>
-<gmd:CI_Citation>
-<gmd:title>
-<gco:CharacterString>Nevada Geothermal Datasets Metadata</gco:CharacterString>
-</gmd:title>
-<gmd:date>
-<gmd:CI_Date>
-<gmd:date>
-<gco:DateTime>2013-01-24T00:00:00</gco:DateTime>
-</gmd:date>
-<gmd:dateType>
-<gmd:CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication">publication</gmd:CI_DateTypeCode>
-</gmd:dateType>
-</gmd:CI_Date>
-</gmd:date>
-<gmd:citedResponsibleParty>
-<gmd:CI_ResponsibleParty>
-<gmd:individualName>
-<gco:CharacterString>No Name Was Given</gco:CharacterString>
-</gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Nevada Bureau of Mines and Geology</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
-<gmd:contactInfo>
-<gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>775-784-6691</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
-<gmd:address>
-<gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>UNR, MS 178</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Reno</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>Nevada</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>89557</gco:CharacterString>
-</gmd:postalCode>
-<gmd:electronicMailAddress>
-<gco:CharacterString>nbmg@unr.edu</gco:CharacterString>
-</gmd:electronicMailAddress>
-</gmd:CI_Address>
-</gmd:address>
-</gmd:CI_Contact>
-</gmd:contactInfo>
-<gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
-</gmd:role>
-</gmd:CI_ResponsibleParty>
-</gmd:citedResponsibleParty>
-</gmd:CI_Citation>
-</gmd:citation>
-<gmd:abstract>
-<gco:CharacterString>This resource is metadata for individual historic documents and maps related to geothermal resources in Nevada and compiled by the Nevada Bureau of Mines and Geology. The data is published as an Excel workbook containing header features including title, description, author, citation, originator, distributor, and resource URL links to documents for download. The Excel workbook contains 6 worksheets, including information about the template, notes related to revisions of the template, Resource provider information, the data, a field list and vocabularies for use in populating the data worksheet (data valid terms). This information was provided by the Nevada Bureau of Mines and Geology and made available for distribution through the AASG National Geothermal Data System.</gco:CharacterString>
-</gmd:abstract>
-<gmd:status>
-<gmd:MD_ProgressCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_ProgressCode" codeListValue="completed">completed</gmd:MD_ProgressCode>
-</gmd:status>
-<gmd:descriptiveKeywords>
-<gmd:MD_Keywords>
-<gmd:keyword>
-<gco:CharacterString>nvbmg</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>basin and range</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>volcanics</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>geothermal</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>metadata</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>nevada</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>volcanism</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>cross-section</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>geothermal system</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>usginres:collection:dataset:catalog</gco:CharacterString>
-</gmd:keyword>
-<gmd:type>
-<gmd:MD_KeywordTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme">theme</gmd:MD_KeywordTypeCode>
-</gmd:type>
-</gmd:MD_Keywords>
-</gmd:descriptiveKeywords>
-<gmd:descriptiveKeywords>
-<gmd:MD_Keywords>
-<gmd:keyword>
-<gco:CharacterString>Nevada Historical Geothermal Dataset Metadata Compilation</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>Nevada Bureau of Mines and Geology</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>Downloadable Files</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>Nevada</gco:CharacterString>
-</gmd:keyword>
-<gmd:thesaurusName xlink:href="/metadata/collection/">
-<gmd:CI_Citation>
-<gmd:title>
-<gco:CharacterString>Server Collections</gco:CharacterString>
-</gmd:title>
-<gmd:date>
-<gmd:CI_Date>
-<gmd:date>
-<gco:Date>2012-06-06</gco:Date>
-</gmd:date>
-<gmd:dateType>
-<gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication"/>
-</gmd:dateType>
-</gmd:CI_Date>
-</gmd:date>
-</gmd:CI_Citation>
-</gmd:thesaurusName>
-</gmd:MD_Keywords>
-</gmd:descriptiveKeywords>
-<gmd:language>
-<gco:CharacterString>eng</gco:CharacterString>
-</gmd:language>
-<gmd:characterSet>
-<gmd:MD_CharacterSetCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode " codeListValue="utf8">UTF-8</gmd:MD_CharacterSetCode>
-</gmd:characterSet>
-<gmd:topicCategory>
-<gmd:MD_TopicCategoryCode>geoscientificInformation</gmd:MD_TopicCategoryCode>
-</gmd:topicCategory>
-<gmd:extent>
-<gmd:EX_Extent>
-<gmd:geographicElement>
-<gmd:EX_GeographicBoundingBox>
-<gmd:westBoundLongitude>
-<gco:Decimal>-120.5859375</gco:Decimal>
-</gmd:westBoundLongitude>
-<gmd:eastBoundLongitude>
-<gco:Decimal>-113.73046875</gco:Decimal>
-</gmd:eastBoundLongitude>
-<gmd:southBoundLatitude>
-<gco:Decimal>34.524661471772</gco:Decimal>
-</gmd:southBoundLatitude>
-<gmd:northBoundLatitude>
-<gco:Decimal>42.488301979602</gco:Decimal>
-</gmd:northBoundLatitude>
-</gmd:EX_GeographicBoundingBox>
-</gmd:geographicElement>
-</gmd:EX_Extent>
-</gmd:extent>
-</gmd:MD_DataIdentification>
-</gmd:identificationInfo>
-<gmd:distributionInfo>
-<gmd:MD_Distribution>
-<gmd:distributor>
-<gmd:MD_Distributor>
-<gmd:distributorContact>
-<gmd:CI_ResponsibleParty>
-<gmd:individualName>
-<gco:CharacterString>No Name Was Given</gco:CharacterString>
-</gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Nevada Bureau of Mines and Geology</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
-<gmd:contactInfo>
-<gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>775-784-6691</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
-<gmd:address>
-<gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>UNR, MS 178</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Reno</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>Nevada</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>89557</gco:CharacterString>
-</gmd:postalCode>
-<gmd:electronicMailAddress>
-<gco:CharacterString>nbmg@unr.edu</gco:CharacterString>
-</gmd:electronicMailAddress>
-</gmd:CI_Address>
-</gmd:address>
-</gmd:CI_Contact>
-</gmd:contactInfo>
-<gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
-</gmd:role>
-</gmd:CI_ResponsibleParty>
-</gmd:distributorContact>
-</gmd:MD_Distributor>
-</gmd:distributor>
-<gmd:distributor>
-<gmd:MD_Distributor>
-<gmd:distributorContact>
-<gmd:CI_ResponsibleParty>
-<gmd:individualName>
-<gco:CharacterString>No Name Was Given</gco:CharacterString>
-</gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Arizona Geological Survey</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
-<gmd:contactInfo>
-<gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>520-770-3500</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
-<gmd:address>
-<gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>416 W. Congress St., Suite 100</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Tucson</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>AZ</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>85701</gco:CharacterString>
-</gmd:postalCode>
-<gmd:electronicMailAddress>
-<gco:CharacterString>metadata@azgs.az.gov</gco:CharacterString>
-</gmd:electronicMailAddress>
-</gmd:CI_Address>
-</gmd:address>
-</gmd:CI_Contact>
-</gmd:contactInfo>
-<gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
-</gmd:role>
-</gmd:CI_ResponsibleParty>
-</gmd:distributorContact>
-</gmd:MD_Distributor>
-</gmd:distributor>
-<gmd:transferOptions>
-<gmd:MD_DigitalTransferOptions id="http___repository_stategeothermaldata_org_metadata_record_f45943f40af01ba4512004cf04f3f6d0_file_nv_yr1_geothermaldatametadatacompilation1_3_5_zip">
-<gmd:onLine>
-<gmd:CI_OnlineResource>
-<gmd:linkage>
-<gmd:URL>http://repository.stategeothermaldata.org/metadata/record/f45943f40af01ba4512004cf04f3f6d0/file/nv_yr1_geothermaldatametadatacompilation1.3.5.zip</gmd:URL>
-</gmd:linkage>
-<gmd:name>
-<gco:CharacterString>Zipped Excel Workbook containing Metadata for Geothermal Resource Documents for the State of Nevada</gco:CharacterString>
-</gmd:name>
-<gmd:function>
-<gmd:CI_OnLineFunctionCode codeList="http://www.fgdc.gov/nap/metadata/register/registerItemClasses.html#IC_88" codeListValue="375">download</gmd:CI_OnLineFunctionCode>
-</gmd:function>
-</gmd:CI_OnlineResource>
-</gmd:onLine>
-</gmd:MD_DigitalTransferOptions>
-</gmd:transferOptions>
-</gmd:MD_Distribution>
-</gmd:distributionInfo>
-<gmd:metadataMaintenance>
-<gmd:MD_MaintenanceInformation>
-<gmd:maintenanceAndUpdateFrequency>
-<gmd:MD_MaintenanceFrequencyCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode" codeListValue="IRREGULAR">irregular
-								</gmd:MD_MaintenanceFrequencyCode>
-</gmd:maintenanceAndUpdateFrequency>
-<gmd:maintenanceNote>
-<gco:CharacterString>This metadata record has been processed by the iso-19115-to-usgin-19115-data XSLT to ensure that all mandatory content for USGIN profile has been added.2013-11-04T12:00:00</gco:CharacterString>
-</gmd:maintenanceNote>
-</gmd:MD_MaintenanceInformation>
-</gmd:metadataMaintenance>
-</gmd:MD_Metadata>
-<gmd:MD_Metadata xmlns="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gmi="http://www.isotc211.org/2005/gmi" xmlns:gml="http://www.opengis.net/gml" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:srv="http://www.isotc211.org/2005/srv" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.isotc211.org/2005/gmd http://schemas.opengis.net/csw/2.0.2/profiles/apiso/1.0.0/apiso.xsd">
-<gmd:fileIdentifier>
-<gco:CharacterString>df0dbda5ca192cb6d9df00e41717010e</gco:CharacterString>
-</gmd:fileIdentifier>
-<gmd:language>
-<gco:CharacterString>eng</gco:CharacterString>
-</gmd:language>
-<gmd:characterSet>
-<gmd:MD_CharacterSetCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8">UTF-8</gmd:MD_CharacterSetCode>
-</gmd:characterSet>
-<gmd:hierarchyLevel>
-<gmd:MD_ScopeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_ScopeCode" codeListValue="Dataset">Dataset</gmd:MD_ScopeCode>
-</gmd:hierarchyLevel>
-<gmd:hierarchyLevelName>
-<gco:CharacterString>collection:dataset</gco:CharacterString>
-</gmd:hierarchyLevelName>
-<gmd:contact>
-<gmd:CI_ResponsibleParty>
-<gmd:individualName>
-<gco:CharacterString>Esty Pape</gco:CharacterString>
-</gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Arizona Geological Survey</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
-<gmd:contactInfo>
-<gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>520-209-4138</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
-<gmd:address>
-<gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>416 W Congress, Ste 100</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Tucson</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>AZ</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>85701</gco:CharacterString>
-</gmd:postalCode>
-<gmd:electronicMailAddress>
-<gco:CharacterString>esty.pape@azgs.az.gov</gco:CharacterString>
-</gmd:electronicMailAddress>
-</gmd:CI_Address>
-</gmd:address>
-</gmd:CI_Contact>
-</gmd:contactInfo>
-<gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
-</gmd:role>
-</gmd:CI_ResponsibleParty>
-</gmd:contact>
-<gmd:dateStamp>
-<gco:DateTime>2014-05-21T16:47:04Z</gco:DateTime>
-</gmd:dateStamp>
-<gmd:metadataStandardName>
-<gco:CharacterString>ISO-USGIN</gco:CharacterString>
-</gmd:metadataStandardName>
-<gmd:metadataStandardVersion>
-<gco:CharacterString>1.2</gco:CharacterString>
-</gmd:metadataStandardVersion>
-<gmd:dataSetURI>
-<gco:CharacterString/>
-</gmd:dataSetURI>
-<gmd:identificationInfo>
-<gmd:MD_DataIdentification>
-<gmd:citation>
-<gmd:CI_Citation>
-<gmd:title>
-<gco:CharacterString>Tennessee 7.5 Minute Quadrangle Geologic Maps in Digital Format: Metadata</gco:CharacterString>
-</gmd:title>
-<gmd:date>
-<gmd:CI_Date>
-<gmd:date>
-<gco:DateTime>2014-01-31T00:00:00</gco:DateTime>
-</gmd:date>
-<gmd:dateType>
-<gmd:CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication">publication</gmd:CI_DateTypeCode>
-</gmd:dateType>
-</gmd:CI_Date>
-</gmd:date>
-<gmd:citedResponsibleParty>
-<gmd:CI_ResponsibleParty>
-<gmd:individualName>
-<gco:CharacterString>Peter J. Lemiszki</gco:CharacterString>
-</gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Tennessee Geological Survey</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
-<gmd:contactInfo>
-<gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>865-594-5596</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
-<gmd:address>
-<gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>3711 Middlebrook Pike</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Knoxville</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>TN</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>37921</gco:CharacterString>
-</gmd:postalCode>
-<gmd:electronicMailAddress>
-<gco:CharacterString>Peter.Lemiszki@tn.gov</gco:CharacterString>
-</gmd:electronicMailAddress>
-</gmd:CI_Address>
-</gmd:address>
-</gmd:CI_Contact>
-</gmd:contactInfo>
-<gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
-</gmd:role>
-</gmd:CI_ResponsibleParty>
-</gmd:citedResponsibleParty>
-</gmd:CI_Citation>
-</gmd:citation>
-<gmd:abstract>
-<gco:CharacterString>This resource is metadata for 1:24,000 scale published geologic quadrangle maps for Tennessee that have been converted to GIS coverages and are now available in PDF format. It was compiled by Tennessee Geological Survey and is available as an Excel workbook containing header features including title, description, author, citation, originator, distributor, and resource URL links to documents for download. The Excel workbook contains 6 worksheets, including information about the template, notes related to revisions of the template, Resource provider information, the data, a field list and vocabularies (data valid terms) used to populate the data worksheet. This information was provided by the Tennessee Geological Survey and made available for distribution through the AASG National Geothermal Data System.
-</gco:CharacterString>
-</gmd:abstract>
-<gmd:status>
-<gmd:MD_ProgressCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_ProgressCode" codeListValue="completed">completed</gmd:MD_ProgressCode>
-</gmd:status>
-<gmd:descriptiveKeywords>
-<gmd:MD_Keywords>
-<gmd:keyword>
-<gco:CharacterString>united states</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>tennessee</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>geology map</gco:CharacterString>
-</gmd:keyword>
-<gmd:keyword>
-<gco:CharacterString>quadrangle</gco:CharacterString>
-</gmd:keyword>
-<gmd:type>
-<gmd:MD_KeywordTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme">theme</gmd:MD_KeywordTypeCode>
-</gmd:type>
-</gmd:MD_Keywords>
-</gmd:descriptiveKeywords>
-<gmd:descriptiveKeywords>
-<gmd:MD_Keywords>
-<gmd:keyword>
-<gco:CharacterString>Tennessee 7.5 Minute Quadrangle Geologic Maps Metadata Compilation </gco:CharacterString>
-</gmd:keyword>
-<gmd:thesaurusName xlink:href="/metadata/collection/">
-<gmd:CI_Citation>
-<gmd:title>
-<gco:CharacterString>Server Collections</gco:CharacterString>
-</gmd:title>
-<gmd:date>
-<gmd:CI_Date>
-<gmd:date>
-<gco:Date>2012-06-06</gco:Date>
-</gmd:date>
-<gmd:dateType>
-<gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication"/>
-</gmd:dateType>
-</gmd:CI_Date>
-</gmd:date>
-</gmd:CI_Citation>
-</gmd:thesaurusName>
-</gmd:MD_Keywords>
-</gmd:descriptiveKeywords>
-<gmd:language>
-<gco:CharacterString>eng</gco:CharacterString>
-</gmd:language>
-<gmd:characterSet>
-<gmd:MD_CharacterSetCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode " codeListValue="utf8">UTF-8</gmd:MD_CharacterSetCode>
-</gmd:characterSet>
-<gmd:topicCategory>
-<gmd:MD_TopicCategoryCode>geoscientificInformation</gmd:MD_TopicCategoryCode>
-</gmd:topicCategory>
-<gmd:extent>
-<gmd:EX_Extent>
-<gmd:geographicElement>
-<gmd:EX_GeographicBoundingBox>
-<gmd:westBoundLongitude>
-<gco:Decimal>-90.878906250005</gco:Decimal>
-</gmd:westBoundLongitude>
-<gmd:eastBoundLongitude>
-<gco:Decimal>-81.123046875003</gco:Decimal>
-</gmd:eastBoundLongitude>
-<gmd:southBoundLatitude>
-<gco:Decimal>34.669358545245</gco:Decimal>
-</gmd:southBoundLatitude>
-<gmd:northBoundLatitude>
-<gco:Decimal>37.090239803071</gco:Decimal>
-</gmd:northBoundLatitude>
-</gmd:EX_GeographicBoundingBox>
-</gmd:geographicElement>
-</gmd:EX_Extent>
-</gmd:extent>
-</gmd:MD_DataIdentification>
-</gmd:identificationInfo>
-<gmd:distributionInfo>
-<gmd:MD_Distribution>
-<gmd:distributor>
-<gmd:MD_Distributor>
-<gmd:distributorContact>
-<gmd:CI_ResponsibleParty>
-<gmd:individualName>
-<gco:CharacterString/>
-</gmd:individualName>
-<gmd:organisationName>
-<gco:CharacterString>Tennessee Geological Survey</gco:CharacterString>
-</gmd:organisationName>
-<gmd:positionName>
-<gco:CharacterString>missing</gco:CharacterString>
-</gmd:positionName>
-<gmd:contactInfo>
-<gmd:CI_Contact>
-<gmd:phone>
-<gmd:CI_Telephone>
-<gmd:voice>
-<gco:CharacterString>615-532-1500</gco:CharacterString>
-</gmd:voice>
-</gmd:CI_Telephone>
-</gmd:phone>
-<gmd:address>
-<gmd:CI_Address>
-<gmd:deliveryPoint>
-<gco:CharacterString>William R. Snodgrass TN Tower 312 Rosa L. Parks Ave, 12th Floor</gco:CharacterString>
-</gmd:deliveryPoint>
-<gmd:city>
-<gco:CharacterString>Nashville</gco:CharacterString>
-</gmd:city>
-<gmd:administrativeArea>
-<gco:CharacterString>TN</gco:CharacterString>
-</gmd:administrativeArea>
-<gmd:postalCode>
-<gco:CharacterString>37243</gco:CharacterString>
-</gmd:postalCode>
-<gmd:electronicMailAddress>
-<gco:CharacterString>ask.geology@tn.gov</gco:CharacterString>
-</gmd:electronicMailAddress>
-</gmd:CI_Address>
-</gmd:address>
-</gmd:CI_Contact>
-</gmd:contactInfo>
-<gmd:role>
-<gmd:CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
-</gmd:role>
-</gmd:CI_ResponsibleParty>
-</gmd:distributorContact>
-</gmd:MD_Distributor>
-</gmd:distributor>
-<gmd:transferOptions>
-<gmd:MD_DigitalTransferOptions id="http___repository_stategeothermaldata_org_metadata_record_df0dbda5ca192cb6d9df00e41717010e_file_tn_yr3_tennessee_2013_geologic_maps_metadata_task2029_01232014_xls">
-<gmd:onLine>
-<gmd:CI_OnlineResource>
-<gmd:linkage>
-<gmd:URL>http://repository.stategeothermaldata.org/metadata/record/df0dbda5ca192cb6d9df00e41717010e/file/tn_yr3_tennessee_2013_geologic_maps_metadata_task2029_01232014.xls</gmd:URL>
-</gmd:linkage>
-<gmd:name>
-<gco:CharacterString>Excel Workbook containing Metadata for Digital Geologic Maps for the State of Tennessee </gco:CharacterString>
-</gmd:name>
-<gmd:function>
-<gmd:CI_OnLineFunctionCode codeList="http://www.fgdc.gov/nap/metadata/register/registerItemClasses.html#IC_88" codeListValue="375">download</gmd:CI_OnLineFunctionCode>
-</gmd:function>
-</gmd:CI_OnlineResource>
-</gmd:onLine>
-</gmd:MD_DigitalTransferOptions>
-</gmd:transferOptions>
-</gmd:MD_Distribution>
-</gmd:distributionInfo>
-<gmd:metadataMaintenance>
-<gmd:MD_MaintenanceInformation>
-<gmd:maintenanceAndUpdateFrequency>
-<gmd:MD_MaintenanceFrequencyCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode" codeListValue="IRREGULAR">irregular
-								</gmd:MD_MaintenanceFrequencyCode>
-</gmd:maintenanceAndUpdateFrequency>
-<gmd:maintenanceNote>
-<gco:CharacterString>This metadata record has been processed by the iso-19115-to-usgin-19115-data XSLT to ensure that all mandatory content for USGIN profile has been added.2013-11-04T12:00:00</gco:CharacterString>
-</gmd:maintenanceNote>
-</gmd:MD_MaintenanceInformation>
-</gmd:metadataMaintenance>
-</gmd:MD_Metadata>
-</csw:SearchResults>
-</csw:GetRecordsResponse>
+      <gmd:descriptiveKeywords>
+        <gmd:MD_Keywords>
+          <!-- For each geographic or spatial keyword in the bibliography insert the following XML fragment for each item in that list. - - >
+          <gmd:keyword>
+            <gco:CharacterString><!- - A SINGLE KEYWORD PHRASE FOR THE LOCATION e.g. 'New York' (a state) OR 'Rockland County' (a county) - - ></gco:CharacterString>
+          </gmd:keyword>
+          <!- - (End of XML fragment) -->
+          <!-- If no geographic or spatial keywords are in the bibliography insert the following block -->
+          <gmd:keyword>
+            <gco:CharacterString>non-geographic</gco:CharacterString>
+          </gmd:keyword>
+          <gmd:type>
+          <gmd:MD_KeywordTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="place">place</gmd:MD_KeywordTypeCode>
+          </gmd:type>
+        </gmd:MD_Keywords>
+      </gmd:descriptiveKeywords>
+      <gmd:language>
+        <gco:CharacterString>eng</gco:CharacterString>
+      </gmd:language>
+      <gmd:topicCategory>
+        <gmd:MD_TopicCategoryCode>geoscientificInformation</gmd:MD_TopicCategoryCode>
+      </gmd:topicCategory>
+      <!-- If no extents exist then insert the following block -->
+      <gmd:extent>
+        <gmd:EX_Extent/>
+      </gmd:extent>
+      <!-- If extents exist for this publication then insert the following block. -->
+      <!-- gmd:extent>
+        <gmd:EX_Extent>
+          <gmd:geographicElement>
+            <gmd:EX_GeographicBoundingBox>
+              <gmd:westBoundLongitude>
+                <gco:Decimal>180</gco:Decimal>
+              </gmd:westBoundLongitude>
+              <gmd:eastBoundLongitude>
+                <gco:Decimal>-180</gco:Decimal>
+              </gmd:eastBoundLongitude>
+              <gmd:southBoundLatitude>
+                <gco:Decimal>-90</gco:Decimal>
+              </gmd:southBoundLatitude>
+              <gmd:northBoundLatitude>
+                <gco:Decimal>90</gco:Decimal>
+              </gmd:northBoundLatitude>
+            </gmd:EX_GeographicBoundingBox>
+          </gmd:geographicElement>
+        </gmd:EX_Extent>
+      </gmd:extent-->
+    </gmd:MD_DataIdentification>
+  </gmd:identificationInfo>
+  <gmd:distributionInfo>
+    <gmd:MD_Distribution>
+      <gmd:distributor>
+        <gmd:MD_Distributor>
+          <gmd:distributorContact>
+            <gmd:CI_ResponsibleParty>
+              <gmd:individualName>
+                <gco:CharacterString>Maria Richards</gco:CharacterString>
+              </gmd:individualName>
+              <gmd:organisationName>
+                <gco:CharacterString>SMU Geothermal Laboratory, Roy M. Huffington Department of Earth Sciences</gco:CharacterString>
+              </gmd:organisationName>
+              <gmd:contactInfo>
+                <gmd:CI_Contact>
+                  <gmd:phone>
+                    <gmd:CI_Telephone>
+                      <gmd:voice>
+                        <gco:CharacterString>214-768-1975</gco:CharacterString>
+                      </gmd:voice>
+                    </gmd:CI_Telephone>
+                  </gmd:phone>
+                  <gmd:address>
+                    <gmd:CI_Address>
+                      <gmd:deliveryPoint>
+                        <gco:CharacterString>P.O. Box 750395</gco:CharacterString>
+                      </gmd:deliveryPoint>
+                      <gmd:city>
+                        <gco:CharacterString>Dallas</gco:CharacterString>
+                      </gmd:city>
+                      <gmd:administrativeArea>
+                        <gco:CharacterString>TX</gco:CharacterString>
+                      </gmd:administrativeArea>
+                      <gmd:postalCode>
+                        <gco:CharacterString>75275-0395</gco:CharacterString>
+                      </gmd:postalCode>
+                      <gmd:electronicMailAddress>
+                        <gco:CharacterString>mrichard@smu.edu</gco:CharacterString>
+                      </gmd:electronicMailAddress>
+                    </gmd:CI_Address>
+                  </gmd:address>
+                </gmd:CI_Contact>
+              </gmd:contactInfo>
+              <gmd:role>
+                <gmd:CI_RoleCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="distributor">distributor</gmd:CI_RoleCode>
+              </gmd:role>
+            </gmd:CI_ResponsibleParty>
+          </gmd:distributorContact>
+        </gmd:MD_Distributor>
+      </gmd:distributor>
+      <gmd:transferOptions>
+        <gmd:MD_DigitalTransferOptions>
+          <gmd:onLine>
+            <gmd:CI_OnlineResource>
+              <gmd:linkage>
+                <gmd:URL>http://www.osti.gov/geothermal/servlets/purl/7369635-5AlstN/</gmd:URL>
+              </gmd:linkage>
+              <gmd:name>
+                <gco:CharacterString>Geopressured geothermal well testing. [Abstract and figures only]</gco:CharacterString>
+              </gmd:name>
+              <gmd:description>
+                <gco:CharacterString>URL by which to download this publication</gco:CharacterString>
+              </gmd:description>
+              <gmd:function>
+                <gmd:CI_OnLineFunctionCode codeList="http://www.fgdc.gov/nap/metadata/register/registerItemClasses.html#IC_88" codeListValue="384">fileAccess</gmd:CI_OnLineFunctionCode>
+              </gmd:function>
+            </gmd:CI_OnlineResource>
+          </gmd:onLine>
+        </gmd:MD_DigitalTransferOptions>
+      </gmd:transferOptions>
+    </gmd:MD_Distribution>
+  </gmd:distributionInfo>
+</gmd:MD_Metadata></csw:SearchResults></csw:GetRecordsResponse>

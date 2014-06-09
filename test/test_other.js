@@ -8,7 +8,7 @@ module.exports = {
 	test_liveGeothermaldataCswUrl: function (test){
 		test.expect(1);
 		var base = "http://geothermaldata.org/csw?";
-		utility.buildUrl(base, 10, 10, function (csw) {
+		utility.buildGetRecords(base, 10, 10, function (csw) {
 			var options = {
 				host: csw.host,
 				port: 80,
