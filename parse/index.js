@@ -11,85 +11,64 @@ var fs = require("fs");
 var path = require("path");
 var async = require("async");
 var handle = require("../handle");
+var domain = require("domain");
 
 module.exports = {
-  scaleRequest: function (parameters, increment, callback) {
-    var counter = 0,
-      total;
-
-    http.get(parameters).on("response", function (response) {
-      var xml = new xmlStream(response, "utf-8");
-      xml.on("endElement: csw:SearchResults", function (results) {
-        total = results.$.numberOfRecordsMatched
-        while (counter < total) {
-          counter += increment;
-        }
-    
-        var placeHolder = (counter-increment),
-        lastRecord = ((increment-(counter-total))+placeHolder);
-
-        if (typeof callback === "function") {
-        callback({
-            "increment": increment,
-            "placeHolder": placeHolder,
-            "lastRecord": lastRecord,
-          })
-        }
-      })
-    }).end();
-  },
-  // Given a CSW URL, stream out all of the data associated with the parent tag
-  // specified in the 'fullRecord' variable.  On each match, query some xpaths
-  // and return a UID and the linkage URLs.  Finally, stream the UID, linkage
-  // URLs and full XML match to the callback.
   parseCsw: function (parameters, callback) {
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
+    var searchResults = new saxpath.SaXPath(saxParser, "//csw:SearchResults");
     var fullRecord = new saxpath.SaXPath(saxParser, "//gmd:MD_Metadata");
-    var url = "http://" + parameters.host + parameters.path;
+    var serverDomain = domain.create();
 
-    var options = {
-      "url": url,
-      "headers": {
-        "Content-type": "text/xml;charset=utf-8",
-      }      
-    };
-    
-    request.get(options)
-      .on("response", function () {})
-      .on("error", function () {
-        console.log("ERROR")
-      })
-      .pipe(saxParser);
-
-    var data = [];
-
-    fullRecord.on("match", function (xml) {
-      var idReg = new RegExp(/<gmd:fileIdentifier><gco:CharacterString>(.*?)<\/gco:CharacterString><\/gmd:fileIdentifier>/g);
-      var urlReg = new RegExp(/<gmd:URL>(.*?)<\/gmd:URL>/g);
-      
-      var fileId = idReg.exec(xml)[1];
-      var linkages = [];
-      var match;
-
-      while (match = urlReg.exec(xml)) {
-        linkages.push(match[1]);
-      };
-
-      data.push({
-        "fileId": fileId,
-        "linkages": linkages,
-        "fullRecord": xml,
-      })
+    serverDomain.on("error", function (err) {
+      console.log(err);
     });
 
-    fullRecord.on("end", function () {
-      callback(data);
+    serverDomain.run(function () {
+      http.get(parameters, function (res) {
+        res.pipe(saxParser);
+
+        var nextRecord;
+
+        searchResults.on("match", function (xml) {
+          var doc = new dom().parseFromString(xml);
+          var records = xpath(doc, "@nextRecord")[0].value
+          nextRecord = records;
+        });
+
+        fullRecord.on("match", function (xml) {
+          var idReg = new RegExp(/<gmd:fileIdentifier><gco:CharacterString>(.*?)<\/gco:CharacterString><\/gmd:fileIdentifier>/g);
+          var urlReg = new RegExp(/<gmd:URL>(.*?)<\/gmd:URL>/g);
+          
+          var fileId = idReg.exec(xml)[1];
+          var linkages = [];
+          var match;
+
+          while (match = urlReg.exec(xml)) {
+            linkages.push(match[1]);
+          };
+
+          callback({
+            "fileId": fileId,
+            "linkages": linkages,
+            "fullRecord": xml,
+          })
+        });
+
+        fullRecord.on("end", function () {
+          callback({"next": nextRecord});
+        });
+
+        res.on("end", function () {
+        
+        });
+
+        res.on("error", function (err) {
+          throw err;
+        })
+      })
     })
   },
-  // Given an array of linkage URLs, pull out the WFS getCapabilities URLs and 
-  // ping them.  If URL returns 200, then pull out the getFeatures service 
-  // endpoint and the typeNames.  If the typeName matches 'aasg:WellLog', then 
-  // construct a getFeatures URL and pass it to the callback.
   parseGetCapabilitiesWFS: function (linkage, callback) {
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
     var capabilities = new saxpath.SaXPath(saxParser, "/wfs:WFS_Capabilities");
@@ -122,7 +101,9 @@ module.exports = {
       }
     });
   },
-  parseWellLogsWFS: function (linkage, directory, callback) {
+  parseWellLogsWFS: function (res, callback) {
+    var linkage = res.linkage;
+    var directory = res.directory;
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
     var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
     
@@ -195,28 +176,38 @@ module.exports = {
       }
     }) 
   },
-  parseGetFeaturesWFS: function (linkage, directory, file, callback) {
+  parseGetFeaturesWFS: function (res, callback) {
+    var directory = res.directory;
+    var linkage = res.linkage;
+    var file = res.file;
+    var serverDomain = domain.create();
+
     fs.exists(directory, function (exists) {
       var outputXML = path.join(directory, file + ".xml");
-      http.get(linkage, function (response) {
-        var file = fs.createWriteStream(outputXML);
-        response.pipe(file);
 
-        file.on("close", function () {
-          callback(outputXML);
-        })
+      serverDomain.on("error", function (err) {
+        console.log(err);
+        callback();
+      });
 
-        file.on("error", function (error) {
-          callback(error);
-        })
+      serverDomain.run(function () {
+        http.get(linkage, function (res) {
+          var file = fs.createWriteStream(outputXML);
+          res.pipe(file);
 
-        response.on("error", function (error) {
-          file.end();
-        })
+          file.on("close", function () {
+            callback(outputXML);
+          })
 
-        process.on("uncaughtException", function (error) {
-          console.log("EXCEPTION: " + error + linkage);
-        })
+          file.on("error", function (err) {
+            callback(err);
+          })
+
+          res.on("error", function (err) {
+            file.end();
+            callback();
+          })
+        })        
       })
     })
   },
