@@ -5,244 +5,329 @@ var parse = require("./parse");
 var handle = require("./handle");
 var archiver = require("./archive");
 var utility = require("./utility");
+var timber = require("./timber");
 var path = require("path");
 var url = require("url");
 var fs = require("fs");
 var _ = require("underscore");
 var querystring = require("querystring");
 
+var memwatch = require("memwatch");
+memwatch.on("stats", function (stats) {
+  console.log("USAGE TREND: " + stats["usage_trend"]);
+});
+
 var argv = require("yargs")
-  .usage("Command line utility for archiving NGDS data on Amazon S3")
+  .usage("Command line utility for archiving NGDS data on Amazon Glacier")
+  
+  .alias("c", "csw")
+  .describe("c", "CSW endpoint to scrape data from")
 
-  .alias("p", "parse")
+  .alias("m", "max")
+  .describe("m", "Maximum limit of metadata records to scrape")
+
+  .alias("s", "start")
+  .describe("s", "Metadata record to start scraping from")
+
+  .alias("i", "increment")
+  .describe("i", "Number of metadata records to return per request")
+
+  .alias("v", "vault")
+  .describe("v", "Name of Amazon Glacier vault to pipe data to")
+
+  .alias("p", "pingpong")
+  .describe("p", "Ping every linkage in every metadata record")
+
+  .alias("z", "zip")
+  .describe("z", "Traverse outputs and force compression")
+
+  .alias("g", "glacier")
+  .describe("g", "Stream compressed directory to AWS Glacier")
+
+  .alias("k", "parse")
   .describe("Parse a CSW")
-
-  .alias("a", "archive")
-  .describe("Archive in AWS Glacier")
+//  .demand("z")
   .argv;
 
 var cmdQueue = [];
-if (argv.parse) cmdQueue.push(parseCsw);
-if (argv.archive) cmdQueue.push(doArchive);
+if (argv.parse) cmdQueue.push(scrapeCsw);
+if (argv.pingpong) cmdQueue.push(pingPong);
+if (argv.zip) cmdQueue.push(zipZap);
+if (argv.glacier) cmdQueue.push(awsGlacier);
 
 async.series(cmdQueue);
 
-function parseCsw () {
-  var DataStore = function () {
-    var linkages = {};
-    linkages.unique = [];
-    linkages.status = [];
-    linkages.dead = [];
-    return linkages;
-  };
-  var datastore = new DataStore();
-  var base = argv.out ? argv.out : path.dirname(require.main.filename);
+function scrapeCsw () {
+  var base = argv.vault 
+    ? argv.vault
+    : path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
-  var logs = {
-    "status": path.join(dirs["logs"], "linkage-status.csv"),
-    "dead": path.join(dirs["logs"], "dead-linkages.csv"),
-    "unique": path.join(dirs["logs"], "unique-linkages.csv"),
-  }
   var vault = "ngds-archive";
-
-  function pinger (data, store, callback) {
-    async.forEach(data.linkages, function (linkage) {
-      var parsedUrl = url.parse(linkage);
-      var host = parsedUrl["protocol"] + "//" + parsedUrl["host"];
-      if (_.indexOf(store["unique"], host) === -1) {
-        store["unique"].push(host);
-        handle.pingUrl(host, function (error, response) {
-          if (error)
-            error["ping"] = "DEAD";
-            store["dead"].push(error);
-            store["status"].push(error);
-          if (response)
-            response["ping"] = "ALIVE";
-            store["status"].push(response);
-        })
-      }
-    })
-    callback(null);
-  };
-
-  function writeUrlStatus (store, logs, callback) {
-    async.series([
-      function (callback) {
-        handle.linkageLogger(store["unique"], logs["unique"], function (error, response) {
-          if (error) callback(null, error);
-          callback(null, response);
-        })
-      },
-      function (callback) {
-        handle.linkageLogger(store["status"], logs["status"], function (error, response) {
-          if (error) callback(null, error);
-          callback(null, response);
-        })
-      },
-      function (callback) {
-        handle.linkageLogger(store["dead"], logs["dead"], function (error, response) {
-          if (error) callback(null, error);
-          callback(null, response);
-        })
-      },
-    ],
-    function (error, results) {
-      if (error) callback(error);
-      callback(results);
-    })
-  }
-
-  function constructor (item, callback) {
-    var directory = path.join(dirs["record"], item.fileId);
-    var archived = path.join(dirs["archive"], item.fileId + ".zip");
-    var outXML = path.join(directory, item.fileId + ".xml");
-    var construct = {
-      "directory": directory,
-      "archived": archived,
-      "outXML": outXML,
-      "fileId": item.fileId,
-      "linkages": item.linkages,
-      "fullRecord": item.fullRecord,
-    }
-    callback(null, construct);
-  };
-
-  function processor (data, callback) {
-    var directory = data["directory"];
-    var archived = data["archived"];
-    var outXML = data["outXML"];
-    handle.buildDirectory(directory, function () {
-      handle.writeXML(outXML);
-      async.forEach(data.linkages, function (linkage) {
-        utility.checkLinkage(datastore["dead"], linkage, function (linkage) {
-          if (linkage.search("service=WFS") !== -1) {
-            /*
-            parse.parseGetCapabilitiesWFS(linkage, function (linkages) {
-              async.forEach(linkages, function (linkage) {
-                handle.configurePaths(directory, linkage, function (res) {
-                  handle.buildDirectory(res.directory, function () {
-                    var urlQuery = url.parse(res.linkage)["query"];
-                    var typeName = querystring.parse(urlQuery)["typeNames"];
-                    if (typeName === "aasg:WellLog") {
-                      console.log("GOT A WELL LOG WFS");
-                      parse.parseWellLogsWFS(res.linkage, res.directory, function (response) {
-                        parse.parseWellLogs(response);
-                      })
-                    }
-
-                    if (typeName !== "aasg:WellLog") {
-                      parse.parseGetFeaturesWFS(res.linkage, res.directory, res.file, function (data) {
-                        
-                      })
-                    }                   
-                  })
-                })
-              })
-            })
-            */
-          } else {
-            handle.downloadFile(directory, linkage, function (response) {
-              console.log(response);
-              callback(null, directory, archived);
-            });
-          }
-        })
-      }) 
-    })
-  };
-
-  function zipper (directory, archived, callback) {
-    handle.compressDirectory(directory, archived, function () {
-      callback(null, archived);      
-    })
-  }
-
-  function vault (callback) {
-    archiver.checkGlacierVaults(vault, function (error, response) {
-      if (error) callback(error);
-      else callback(null);
-    });    
-  }
-
-  function iceberg (archived, callback) {
-    archiver.uploadToGlacier(archived, vault, function (error, response) {
-      if (error) callback(error);
-      else callback(response);
-    })
-  }
-
-  var queue = async.queue(function (getRecordUrl, callback) {
-    parse.parseCsw(getRecordUrl, function (data) {
-      async.each(data, function (item) {
-        async.waterfall([
-          /*
-          function (callback) {
-            vault(callback);
-          },
-          */
-          function (callback) {
-            pinger(item, datastore, callback);
-          },
-          function (callback) {
-            constructor(item, callback);
-          },
-          function (data, callback) {
-            processor(data, callback);
-          },
-          function (directory, archive, callback) {
-            zipper(directory, archive, callback);
-          },
-          function (archived, callback) {
-            iceberg(archived, function (response) {
-              console.log(response);
-            })
-          }
-        ], function (error, result) {
-          if (error) callback(error);
-        });
+  function recursiveScrape (start) {
+    start = typeof start !== "undefined" ? start : 1;
+    var base = "http://geothermaldata.org/csw?";
+    utility.buildGetRecords(base, start, 10, function (getUrl) {
+      parse.parseCsw(getUrl, function (data) {
+        if (data) {
+          async.waterfall([
+            function (callback) {
+              constructor(dirs, data, callback);
+            },
+            function (data, callback) {
+              processor(data, callback);
+            },
+            function (uncompressed, compressed, callback) {
+              zipper(uncompressed, compressed, callback);
+            },
+          ], function (error, result) {
+            if (error) callback(error);
+          });
+        }
+        if (data["next"]) {
+          console.log(data["next"]);
+          if (data["next"] > 0)
+            recursiveScrape(data["next"]);
+        }
       })
-    callback();
-    })
-  }, 1);
-
-  queue.drain = function () {
-    if (queue.length() === 0) {
-      console.log("All getRecordUrls have been processed.");      
-    }
+    })    
   }
-  
-  function startQueue () {
-    utility.doRequest(33875, 10, function (x) {
-      var base = "http://geothermaldata.org/csw?";
-      utility.buildUrl(base, x.counter, x.increment, function (getRecords) {
-        queue.push(getRecords);
-      });
-    })
-  }
-
-  startQueue();
+  recursiveScrape();
 }
 
+function zipZap () {
+  var base = argv.vault 
+    ? argv.vault
+    : path.dirname(require.main.filename);
+  var dirs = utility.buildDirs(base);
+  utility.longWalk(dirs["record"], function (parents) {
+    var parentCounter = parents.length;
+    var parentIndex = 0;
+    function recursiveCompress(parent) {
+      var parentExt = path.extname(parent);
+      if (parentExt === ".zip") {
+        parentIndex += 1;
+        if (parentIndex !== parentCounter) {
+          recursiveCompress(parents[parentIndex]);          
+        }
+      }
+      if (parentExt !== ".zip") {
+        utility.longWalk(parent, function (children) {
+          var counter = children.length;
+          var increment = 0;
+          _.each(children, function (child) {
+            var ext = path.extname(child);
+            if (ext !== ".zip") {
+              zipper(child, child + ".zip", function () {
+                increment += 1;
+                if (increment === counter) {
+                  zipper(parent, parent + ".zip", function () {
+                    parentIndex += 1;
+                    console.log("Compressed ", parent + ".zip");
+                    if (parentIndex !== parentCounter) {
+                      recursiveCompress(parents[parentIndex]);
+                    }
+                  })
+                }
+              })
+            } else {
+              increment += 1;
+              if (increment === counter) {
+                zipper(parent, parent + ".zip", function () {
+                  parentIndex += 1;
+                  console.log("Compressed ", parent + ".zip");
+                  if (parentIndex !== parentCounter) {
+                    recursiveCompress(parents[parentIndex]);
+                  }
+                })
+              }
+            }
+          })
+        })        
+      }
+    }
+    recursiveCompress(parents[0]);
+  }) 
+}
 
+function pingPong () {
+  var base = argv.vault 
+    ? argv.vault
+    : path.dirname(require.main.filename);
+  var dirs = utility.buildDirs(base);
+  function recursivePing (start) {
+    start = typeof start !== "undefined" ? start : 1;
+    var base = "http://geothermaldata.org/csw?";
+    utility.buildGetRecords(base, start, 100, function (getUrl) {
+      parse.parseCsw(getUrl, function (data) {
+        if (data) {
+          data["csw"] = base;
+          async.waterfall([
+            function (callback) {
+              pingLogger(dirs, data, callback);
+            },
+          ])
+        }
 
+        if (data["next"]) {
+          console.log("NEXT: ", data["next"]);
+          if (data["next"] > 0) recursivePing(data["next"]);
+        }
+      })
+    })    
+  }
+  recursivePing();
+}
 
+function awsGlacier () {
+  var vault = "ngds-archive";
+  var base = argv.vault
+    ? argv.vault
+    : path.dirname(require.main.filename);
+  var dirs = utility.buildDirs(base);
+  utility.longWalk(dirs["record"], function (zips) {
+    async.each(zips, function (zip) {
+      archiver.uploadToGlacier(zip, vault, function (res) {
+        console.log(res);
+      })
+    })
+  })
+}
 
+///////////////////////////////////////////////////////////////////////////////
+function pingLogger (dirs, data, callback) {
+  async.each(data.linkages, function (linkage) {
+    if (typeof linkage !== "undefined") {
+      handle.pingPong(linkage, function (err, res) {
+        if (err) callback(err);
+        if (res) {
+          var status = {
+            "time": new Date().toISOString(),
+            "csw": data["csw"],
+            "id": data["fileId"],
+            "linkage": linkage,
+            "status": res["res"]["statusCode"],
+          }
 
+          timber.writePingStatus(dirs, status, function (err, res) {
+            if (err) callback(err);
+            else callback();
+          })
+        }
+      })
+    }
+  })
+}
 
+function constructor (dirs, item, callback) {
+  var linkages = _.map(item.linkages, function (linkage) {
+      var parsedUrl = url.parse(linkage);
+      var host = parsedUrl["host"];
+      if (host) {
+        var parent = path.join(dirs["record"], host);
+        var parentArchive = path.join(dirs["record"], host + ".zip");
+        var child = path.join(parent, item.fileId);
+        var childArchive = path.join(parent, item.fileId + ".zip");
+        var outXML = path.join(child, item.fileId + ".xml");
+        
+        return {
+          "host": host,
+          "parent": parent,
+          "parentArchive": parentArchive,
+          "child": child,
+          "childArchive": childArchive,
+          "linkage": linkage,
+          "outXML": outXML,
+        }          
+      }
+  });
 
+  construct = {
+    "linkages": linkages,
+    "fileId": item.fileId,
+    "fullRecord": item.fullRecord,
+  }
+  callback(null, construct);
+};
 
+function processWFS (dir, linkage, callback) {
+  parse.parseGetCapabilitiesWFS(linkage, function (wfs) {
+    var counter = wfs.length;
+    var increment = 0;
+    async.each(wfs, function (getWfs) {
+      handle.configurePaths(dir, getWfs, function (res) {
+        var urlQuery = url.parse(getWfs)["query"];
+        var typeName = querystring.parse(urlQuery)["typeNames"];
+        if (typeName === "aasg:WellLog") {
+          parse.parseWellLogsWFS(res, function (data) {
+            callback(data);
+          })
+        } else {
+          parse.parseGetFeaturesWFS(res, function () {
+            increment += 1;
+            if (increment === counter) {
+              callback();
+            }
+          })
+        }        
+      })
+    })
+  })
+}
 
+function processor (construct, callback) {
+  var counter = construct["linkages"].length;
+  var increment = 1;
+  async.each(construct["linkages"], function (data) {
+    if (typeof data !== "undefined") {
+      handle.buildDirectory(data["parent"], function (parent) {
+        handle.buildDirectory(data["child"], function (child) {
+          handle.writeXML(data["outXML"], construct["fullRecord"], function () {
+            if (data["linkage"].search("service=WFS") !== -1) {
+              processWFS(data["child"], data["linkage"], function (res) {
+                if (res) {
+                  var wfsXML = path.join(res["dir"], res["xmlId"]);
+                  handle.writeXML(wfsXML, res["xml"], function () {
+                    async.each(res["linkages"], function (linkage) {                      
+                      handle.download(res["dir"], linkage, function () {
+                      
+                      })
+                    })
+                  })                  
+                }
+              })
+            } else {
+              handle.download(data["child"], data["linkage"], function () {
+                increment += 1;
+                if (increment === counter) {
+                  callback(null, data["child"], data["childArchive"]);                
+                }
+              })              
+            }
+          })
+        })
+      })
+    }
+  })
+}
 
+function zipper (uncompressed, compressed, callback) {
+  if (uncompressed && compressed) {
+    handle.compressDirectory(uncompressed, compressed, function (res) {
+      callback(null);        
+    })    
+  }
+};
 
+function vault (callback) {
+  archiver.checkGlacierVaults(vault, function (error, response) {
+    if (error) callback(error);
+    else callback(null);
+  });    
+};
 
-
-
-
-
-
-
-
-
-
-
-
+function iceberg (uncompressed, compressed, vault, callback) {
+  archiver.uploadToGlacier(uncompressed, compressed, vault, function (error, response) {
+    if (error) callback(error);
+    else callback(response);
+  })
+};
