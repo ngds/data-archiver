@@ -141,6 +141,8 @@ module.exports = {
         var linkage = res["linkage"];
         module.configurePaths(directory, linkage, function (res) {
 
+          console.log(res);
+
           var directory = res.directory.replace(/(\r\n|\n|\r)/gm,"");
           var file = res.file.replace(/(\r\n|\n|\r)/gm,"");
           var output = path.join(directory, file);

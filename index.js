@@ -287,9 +287,9 @@ function processor (construct, callback) {
                 if (res) {
                   var wfsXML = path.join(res["dir"], res["xmlId"]);
                   handle.writeXML(wfsXML, res["xml"], function () {
-                    async.each(res["linkages"], function (linkage) {
+                    async.each(res["linkages"], function (linkage) {                      
                       handle.download(res["dir"], linkage, function () {
-
+                      
                       })
                     })
                   })                  
