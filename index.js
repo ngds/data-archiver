@@ -85,9 +85,11 @@ function scrapeCsw () {
             function (data, callback) {
               processor(data, callback);
             },
+/*
             function (uncompressed, compressed, callback) {
               zipper(uncompressed, compressed, callback);
             },
+*/
           ], function (error, result) {
             if (error) callback(error);
           });
@@ -280,40 +282,92 @@ function constructor (dirs, item, callback) {
   callback(null, construct);
 };
 
-function processWFS (dir, linkage, callback) {
-  parse.parseGetCapabilitiesWFS(linkage, function (wfs) {
-    var counter = wfs.length;
-    var increment = 0;
-    async.each(wfs, function (getWfs) {
-      handle.configurePaths(dir, getWfs, function (res) {
-        var urlQuery = url.parse(getWfs)["query"];
-        var typeName = querystring.parse(urlQuery)["typeNames"];
-        if (typeName === "aasg:WellLog") {
-          parse.parseWellLogsWFS(res, function (data) {
-            callback(data);
-          })
-        } else {
-          parse.parseGetFeaturesWFS(res, function () {
-            increment += 1;
-            if (increment === counter) {
-              callback();
-            }
-          })
-        }        
+function onlyProcessWFS (dir, linkage, callback) {
+  var base = path.dirname(require.main.filename);
+  var dirs = utility.buildDirs(base);
+  var base = argv.csw;
+  var increment = argv.increment;
+  var start = argv.start;
+  var max = argv.max;
+
+  function recursiveScrape (base, start, increment, max) {
+    start = typeof start !== "undefined" ? start : 1;
+    increment = typeof increment !== "undefined" ? increment : 10;
+    max = typeof max !== "undefined" ? max : 10000000;
+
+    utility.buildGetRecords(base, start, increment, function (getUrl) {
+      parse.parseCsw(getUrl, function (data) {
+        if (data) {
+          async.waterfall([
+            function (callback) {
+              constructor(dirs, data, callback);
+            },
+            function (data, callback) {
+              processor(data, callback);
+            },
+          ], function (error, result) {
+            if (error) callback(error);
+          });
+        }
+        if (data["next"]) {
+          console.log(data["next"]);
+          if (data["next"] > 0 && data["next"] <= max)
+            recursiveScrape(base, data["next"], increment, max);
+        }
       })
-    })
-  })
+    })    
+  }
+  recursiveScrape(base, start, increment, max);
+}
+
+function processWFS (dir, linkage, callback) {
+  if (linkage.search("service=WFS") > -1) {
+    parse.parseGetCapabilitiesWFS(linkage, function (wfs) {
+      var counter = wfs.length;
+      var increment = 0;
+      async.each(wfs, function (getWfs) {
+        handle.configurePaths(dir, getWfs, function (res) {
+          var out = path.join(res["directory"], res["file"]);
+          handle.buildDirectory(out, function (path) {
+            var urlQuery = url.parse(getWfs)["query"];
+            var typeName = querystring.parse(urlQuery)["typeNames"];
+            if (typeName === "aasg:WellLog") {
+              parse.parseWellLogsWFS(res, function (data) {
+                var wfsXML = path.join(path, data["xmlId"]);
+                handle.writeXML(wfsXML, res["xml"], function () {
+                  async.each(res["linkages"], function (linkage) {
+                    handle.download()
+                  })
+                })
+              })
+            } else {
+              parse.parseGetFeaturesWFS(res, function () {
+                increment += 1;
+                if (increment === counter) {
+                  callback();
+                }
+              })
+            }            
+          })
+        })
+      })
+    })    
+  }
 }
 
 function processor (construct, callback) {
   var counter = construct["linkages"].length;
-  var increment = 1;
+  var increment = 0;
   async.each(construct["linkages"], function (data) {
     if (typeof data !== "undefined") {
       handle.buildDirectory(data["parent"], function (parent) {
         handle.buildDirectory(data["child"], function (child) {
           handle.writeXML(data["outXML"], construct["fullRecord"], function () {
             if (data["linkage"].search("service=WFS") !== -1) {
+              increment += 1;
+              if (increment === counter) {
+                callback(null, data["child"], data["childArchive"]);
+              }
               /*
               processWFS(data["child"], data["linkage"], function (res) {
                 if (res) {
