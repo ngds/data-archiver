@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- pycsw 1.8.0 -->
+<csw:GetRecordsResponse xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:inspire_common="http://inspire.ec.europa.eu/schemas/common/1.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dct="http://purl.org/dc/terms/" xmlns:ows="http://www.opengis.net/ows" xmlns:apiso="http://www.opengis.net/cat/csw/apiso/1.0" xmlns:gml="http://www.opengis.net/gml" xmlns:dif="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:srv="http://www.isotc211.org/2005/srv" xmlns:ogc="http://www.opengis.net/ogc" xmlns:fgdc="http://www.opengis.net/cat/csw/csdgm" xmlns:inspire_ds="http://inspire.ec.europa.eu/schemas/inspire_ds/1.0" xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:os="http://a9.com/-/spec/opensearch/1.1/" xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope" xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9" version="2.0.2" xsi:schemaLocation="http://www.opengis.net/cat/csw/2.0.2 http://schemas.opengis.net/csw/2.0.2/CSW-discovery.xsd"><csw:SearchStatus timestamp="2014-06-09T20:11:02Z"/><csw:SearchResults nextRecord="2" numberOfRecordsMatched="38508" numberOfRecordsReturned="1" recordSchema="http://www.isotc211.org/2005/gmd" elementSet="full"><gmd:MD_Metadata xsi:schemaLocation="http://www.isotc211.org/2005/gmd http://schemas.opengis.net/csw/2.0.2/profiles/apiso/1.0.0/apiso.xsd">
+  <gmd:fileIdentifier>
+    <gco:CharacterString>b0f4ce5e-91ab-30db-9292-f146dc853891</gco:CharacterString>
+  </gmd:fileIdentifier>
+  <gmd:language>
+    <gco:CharacterString>eng</gco:CharacterString>
+  </gmd:language>
+  <gmd:characterSet>
+    <gmd:MD_CharacterSetCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8">UTF-8</gmd:MD_CharacterSetCode>
+  </gmd:characterSet>
+  <gmd:hierarchyLevel>
+    <gmd:MD_ScopeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_ScopeCode" codeListValue="Dataset">Dataset</gmd:MD_ScopeCode>
+  </gmd:hierarchyLevel>
+  <gmd:hierarchyLevelName>
+    <gco:CharacterString>Document</gco:CharacterString>
+  </gmd:hierarchyLevelName>
+  <gmd:contact>
+   <gmd:CI_ResponsibleParty>
+      <gmd:individualName>
+        <gco:CharacterString>Maria Richards</gco:CharacterString>
+      </gmd:individualName>
+      <gmd:organisationName>
+        <gco:CharacterString>SMU Geothermal Laboratory, Roy M. Huffington Department of Earth Sciences</gco:CharacterString>
+      </gmd:organisationName>
+      <gmd:contactInfo>
+        <gmd:CI_Contact>
+          <gmd:phone>
+            <gmd:CI_Telephone>
+              <gmd:voice>
+                <gco:CharacterString>214-768-1975</gco:CharacterString>
+              </gmd:voice>
+            </gmd:CI_Telephone>
+          </gmd:phone>
+          <gmd:address>
+            <gmd:CI_Address>
+              <gmd:deliveryPoint>
+                <gco:CharacterString>P.O. Box 750395</gco:CharacterString>
+              </gmd:deliveryPoint>
+              <gmd:city>
+                <gco:CharacterString>Dallas</gco:CharacterString>
+              </gmd:city>
+              <gmd:administrativeArea>
+                <gco:CharacterString>TX</gco:CharacterString>
+              </gmd:administrativeArea>
+              <gmd:postalCode>
+                <gco:CharacterString>75275-0395</gco:CharacterString>
+              </gmd:postalCode>
+              <gmd:electronicMailAddress>
+                <gco:CharacterString>mrichard@smu.edu</gco:CharacterString>
+              </gmd:electronicMailAddress>
+            </gmd:CI_Address>
+          </gmd:address>
+        </gmd:CI_Contact>
+      </gmd:contactInfo>
+      <gmd:role>
+        <gmd:CI_RoleCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</gmd:CI_RoleCode>
+      </gmd:role>
+    </gmd:CI_ResponsibleParty>
+  </gmd:contact>
+  <gmd:dateStamp>
+    <gco:DateTime>2014-04-29T19:05:43Z</gco:DateTime>
+  </gmd:dateStamp>
+  <gmd:metadataStandardName>
+    <gco:CharacterString>ISO-USGIN</gco:CharacterString>
+  </gmd:metadataStandardName>
+  <gmd:metadataStandardVersion>
+    <gco:CharacterString>1.2</gco:CharacterString>
+  </gmd:metadataStandardVersion>
+  <gmd:dataSetURI>
+    <gco:CharacterString/>
+  </gmd:dataSetURI>
+  <gmd:identificationInfo>
+    <gmd:MD_DataIdentification>
+      <gmd:citation>
+        <gmd:CI_Citation>
+          <gmd:title>
+            <gco:CharacterString>Geopressured geothermal well testing. [Abstract and figures only]</gco:CharacterString>
+          </gmd:title>
+          <gmd:date>
+            <gmd:CI_Date>
+              <gmd:date>
+                <!--
+                    The element here must be a gco:DateTime in the form YYYY-MM-DDThh:mm:ssZ
+                    If we do not know hh:mm:ss then set them to zeros (midnight)
+                    If we only know YYYY-MM then set DD to 01
+                    If we only know YYYY then set MM and DD to 01
+                    If we don't know the YYYY then set it to 1900-01-01 and the time to zeros (midnight)
+                -->
+                <gco:DateTime>1983-02-01T00:00:00Z</gco:DateTime>
+              </gmd:date>
+              <gmd:dateType>
+                <gmd:CI_DateTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="publication">publication</gmd:CI_DateTypeCode>
+              </gmd:dateType>
+            </gmd:CI_Date>
+          </gmd:date>
+          <gmd:citedResponsibleParty>
+<gmd:CI_ResponsibleParty>
+<gmd:individualName>
+<gco:CharacterString>Goldsberry, F.L.</gco:CharacterString>
+</gmd:individualName>
+<gmd:contactInfo>
+<gmd:CI_Contact>
+<gmd:address>
+<gmd:CI_Address>
+<gmd:electronicMailAddress>
+<gco:CharacterString>metadata@smu.edu</gco:CharacterString>
+</gmd:electronicMailAddress>
+</gmd:CI_Address>
+</gmd:address>
+</gmd:CI_Contact>
+</gmd:contactInfo>
+<gmd:role>
+<gmd:CI_RoleCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="author">author</gmd:CI_RoleCode>
+</gmd:role>
+</gmd:CI_ResponsibleParty>
+</gmd:citedResponsibleParty>
+        </gmd:CI_Citation>
+      </gmd:citation>
+      <gmd:abstract>
+        <gco:CharacterString>No Publication Abstract is Available</gco:CharacterString>
+      </gmd:abstract>
+      <gmd:status>
+        <gmd:MD_ProgressCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_ProgressCode" codeListValue="completed">completed</gmd:MD_ProgressCode>
+      </gmd:status>
+      <!-- If there are any keywords associated with this publication's bibliography include them in a block like this.
+      <gmd:descriptiveKeywords>
+        <gmd:MD_Keywords>
+          <gmd:keyword> Repeat this element for each keyword phrase
+            <gco:CharacterString>Single key word phrase</gco:CharacterString>
+          </gmd:keyword>
+          <gmd:type>
+            <gmd:MD_KeywordTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme">theme</gmd:MD_KeywordTypeCode>
+          </gmd:type>
+        </gmd:MD_Keywords>
+      </gmd:descriptiveKeywords>
+      -->
+      <gmd:descriptiveKeywords>
+<gmd:MD_Keywords>
+<gmd:keyword>
+<gco:CharacterString>15 GEOTHERMAL ENERGY</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>GEOPRESSURED SYSTEMS</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>GEOTHERMAL WELLS</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>TESTING</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>EXPLORATORY WELLS</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>FEASIBILITY STUDIES</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>GEOTHERMAL EXPLORATION</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>LOUISIANA</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>TEXAS</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>ENERGY SYSTEMS</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>EXPLORATION</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>FEDERAL REGION VI</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>NORTH AMERICA</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>USA</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>WELLS</gco:CharacterString>
+</gmd:keyword>
+<gmd:keyword>
+<gco:CharacterString>Geothermal Legacy</gco:CharacterString>
+</gmd:keyword>
+<gmd:type>
+<gmd:MD_KeywordTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme">theme</gmd:MD_KeywordTypeCode>
+</gmd:type>
+</gmd:MD_Keywords>
+</gmd:descriptiveKeywords>
+      <gmd:descriptiveKeywords>
+        <gmd:MD_Keywords>
+          <!-- For each geographic or spatial keyword in the bibliography insert the following XML fragment for each item in that list. - - >
+          <gmd:keyword>
+            <gco:CharacterString><!- - A SINGLE KEYWORD PHRASE FOR THE LOCATION e.g. 'New York' (a state) OR 'Rockland County' (a county) - - ></gco:CharacterString>
+          </gmd:keyword>
+          <!- - (End of XML fragment) -->
+          <!-- If no geographic or spatial keywords are in the bibliography insert the following block -->
+          <gmd:keyword>
+            <gco:CharacterString>non-geographic</gco:CharacterString>
+          </gmd:keyword>
+          <gmd:type>
+          <gmd:MD_KeywordTypeCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="place">place</gmd:MD_KeywordTypeCode>
+          </gmd:type>
+        </gmd:MD_Keywords>
+      </gmd:descriptiveKeywords>
+      <gmd:language>
+        <gco:CharacterString>eng</gco:CharacterString>
+      </gmd:language>
+      <gmd:topicCategory>
+        <gmd:MD_TopicCategoryCode>geoscientificInformation</gmd:MD_TopicCategoryCode>
+      </gmd:topicCategory>
+      <!-- If no extents exist then insert the following block -->
+      <gmd:extent>
+        <gmd:EX_Extent/>
+      </gmd:extent>
+      <!-- If extents exist for this publication then insert the following block. -->
+      <!-- gmd:extent>
+        <gmd:EX_Extent>
+          <gmd:geographicElement>
+            <gmd:EX_GeographicBoundingBox>
+              <gmd:westBoundLongitude>
+                <gco:Decimal>180</gco:Decimal>
+              </gmd:westBoundLongitude>
+              <gmd:eastBoundLongitude>
+                <gco:Decimal>-180</gco:Decimal>
+              </gmd:eastBoundLongitude>
+              <gmd:southBoundLatitude>
+                <gco:Decimal>-90</gco:Decimal>
+              </gmd:southBoundLatitude>
+              <gmd:northBoundLatitude>
+                <gco:Decimal>90</gco:Decimal>
+              </gmd:northBoundLatitude>
+            </gmd:EX_GeographicBoundingBox>
+          </gmd:geographicElement>
+        </gmd:EX_Extent>
+      </gmd:extent-->
+    </gmd:MD_DataIdentification>
+  </gmd:identificationInfo>
+  <gmd:distributionInfo>
+    <gmd:MD_Distribution>
+      <gmd:distributor>
+        <gmd:MD_Distributor>
+          <gmd:distributorContact>
+            <gmd:CI_ResponsibleParty>
+              <gmd:individualName>
+                <gco:CharacterString>Maria Richards</gco:CharacterString>
+              </gmd:individualName>
+              <gmd:organisationName>
+                <gco:CharacterString>SMU Geothermal Laboratory, Roy M. Huffington Department of Earth Sciences</gco:CharacterString>
+              </gmd:organisationName>
+              <gmd:contactInfo>
+                <gmd:CI_Contact>
+                  <gmd:phone>
+                    <gmd:CI_Telephone>
+                      <gmd:voice>
+                        <gco:CharacterString>214-768-1975</gco:CharacterString>
+                      </gmd:voice>
+                    </gmd:CI_Telephone>
+                  </gmd:phone>
+                  <gmd:address>
+                    <gmd:CI_Address>
+                      <gmd:deliveryPoint>
+                        <gco:CharacterString>P.O. Box 750395</gco:CharacterString>
+                      </gmd:deliveryPoint>
+                      <gmd:city>
+                        <gco:CharacterString>Dallas</gco:CharacterString>
+                      </gmd:city>
+                      <gmd:administrativeArea>
+                        <gco:CharacterString>TX</gco:CharacterString>
+                      </gmd:administrativeArea>
+                      <gmd:postalCode>
+                        <gco:CharacterString>75275-0395</gco:CharacterString>
+                      </gmd:postalCode>
+                      <gmd:electronicMailAddress>
+                        <gco:CharacterString>mrichard@smu.edu</gco:CharacterString>
+                      </gmd:electronicMailAddress>
+                    </gmd:CI_Address>
+                  </gmd:address>
+                </gmd:CI_Contact>
+              </gmd:contactInfo>
+              <gmd:role>
+                <gmd:CI_RoleCode codeList="http://standards.iso.org/ittf/PubliclyAvailableStandards/ISO_19139_Schemas/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="distributor">distributor</gmd:CI_RoleCode>
+              </gmd:role>
+            </gmd:CI_ResponsibleParty>
+          </gmd:distributorContact>
+        </gmd:MD_Distributor>
+      </gmd:distributor>
+      <gmd:transferOptions>
+        <gmd:MD_DigitalTransferOptions>
+          <gmd:onLine>
+            <gmd:CI_OnlineResource>
+              <gmd:linkage>
+                <gmd:URL>http://www.osti.gov/geothermal/servlets/purl/7369635-5AlstN/</gmd:URL>
+              </gmd:linkage>
+              <gmd:name>
+                <gco:CharacterString>Geopressured geothermal well testing. [Abstract and figures only]</gco:CharacterString>
+              </gmd:name>
+              <gmd:description>
+                <gco:CharacterString>URL by which to download this publication</gco:CharacterString>
+              </gmd:description>
+              <gmd:function>
+                <gmd:CI_OnLineFunctionCode codeList="http://www.fgdc.gov/nap/metadata/register/registerItemClasses.html#IC_88" codeListValue="384">fileAccess</gmd:CI_OnLineFunctionCode>
+              </gmd:function>
+            </gmd:CI_OnlineResource>
+          </gmd:onLine>
+        </gmd:MD_DigitalTransferOptions>
+      </gmd:transferOptions>
+    </gmd:MD_Distribution>
+  </gmd:distributionInfo>
+</gmd:MD_Metadata></csw:SearchResults></csw:GetRecordsResponse>
