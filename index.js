@@ -19,6 +19,8 @@ memwatch.on("stats", function (stats) {
 
 var argv = require("yargs")
   .usage("Command line utility for archiving NGDS data on Amazon Glacier")
+  .example("$0 -d -c http://geothermaldata.org/csw?", 
+    "Scrape an entire CSW and download all linkages")
   
   .alias("c", "csw")
   .describe("c", "CSW endpoint to scrape data from")
@@ -35,6 +37,9 @@ var argv = require("yargs")
   .alias("v", "vault")
   .describe("v", "Name of Amazon Glacier vault to pipe data to")
 
+  .alias("w", "wfs")
+  .describe("w", "Scrape WFS linkages")
+
   .alias("p", "pingpong")
   .describe("p", "Ping every linkage in every metadata record")
 
@@ -44,13 +49,13 @@ var argv = require("yargs")
   .alias("g", "glacier")
   .describe("g", "Stream compressed directory to AWS Glacier")
 
-  .alias("k", "parse")
-  .describe("Parse a CSW")
-//  .demand("z")
+  .alias("d", "download")
+  .describe("d", "Scrape a CSW and download linkages")
+  .demand("c")
   .argv;
 
 var cmdQueue = [];
-if (argv.parse) cmdQueue.push(scrapeCsw);
+if (argv.download) cmdQueue.push(scrapeCsw);
 if (argv.pingpong) cmdQueue.push(pingPong);
 if (argv.zip) cmdQueue.push(zipZap);
 if (argv.glacier) cmdQueue.push(awsGlacier);
@@ -58,15 +63,19 @@ if (argv.glacier) cmdQueue.push(awsGlacier);
 async.series(cmdQueue);
 
 function scrapeCsw () {
-  var base = argv.vault 
-    ? argv.vault
-    : path.dirname(require.main.filename);
+  var base = path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
-  var vault = "ngds-archive";
-  function recursiveScrape (start) {
+  var base = argv.csw;
+  var increment = argv.increment;
+  var start = argv.start;
+  var max = argv.max;
+
+  function recursiveScrape (base, start, increment, max) {
     start = typeof start !== "undefined" ? start : 1;
-    var base = "http://geothermaldata.org/csw?";
-    utility.buildGetRecords(base, start, 10, function (getUrl) {
+    increment = typeof increment !== "undefined" ? increment : 10;
+    max = typeof max !== "undefined" ? max : 10000000;
+
+    utility.buildGetRecords(base, start, increment, function (getUrl) {
       parse.parseCsw(getUrl, function (data) {
         if (data) {
           async.waterfall([
@@ -85,19 +94,52 @@ function scrapeCsw () {
         }
         if (data["next"]) {
           console.log(data["next"]);
-          if (data["next"] > 0)
-            recursiveScrape(data["next"]);
+          if (data["next"] > 0 && data["next"] <= max)
+            recursiveScrape(base, data["next"], increment, max);
         }
       })
     })    
   }
-  recursiveScrape();
+  recursiveScrape(base, start, increment, max);
+}
+
+function pingPong () {
+  var base = path.dirname(require.main.filename);
+  var dirs = utility.buildDirs(base);
+  var base = argv.csw;
+  var increment = argv.increment;
+  var start = argv.start;
+  var max = argv.max;
+
+  function recursivePing (base, start, increment, max) {
+    start = typeof start !== "undefined" ? start : 1;
+    increment = typeof increment !== "undefined" ? increment : 100;
+    max = typeof max !== "undefined" ? max : 10000000;
+    
+    utility.buildGetRecords(base, start, increment, function (getUrl) {
+      parse.parseCsw(getUrl, function (data) {
+        if (data) {
+          data["csw"] = base;
+          async.waterfall([
+            function (callback) {
+              pingLogger(dirs, data, callback);
+            },
+          ])
+        }
+
+        if (data["next"]) {
+          console.log("NEXT: ", data["next"]);
+          if (data["next"] > 0 && data["next"] <= max) 
+            recursivePing(data["next"]);
+        }
+      })
+    })    
+  }
+  recursivePing(start);
 }
 
 function zipZap () {
-  var base = argv.vault 
-    ? argv.vault
-    : path.dirname(require.main.filename);
+  var base = path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
   utility.longWalk(dirs["record"], function (parents) {
     var parentCounter = parents.length;
@@ -111,6 +153,25 @@ function zipZap () {
         }
       }
       if (parentExt !== ".zip") {
+        parentIndex += 1;
+        if (parentIndex <= parentCounter) {
+          utility.longWalk(parent, function (children) {
+            var counter = children.length;
+            var increment = 0;
+            async.each(children, function (child) {
+              if (path.extname(child) !== ".zip") {
+                console.log(child);
+              }
+            })
+            recursiveCompress(parents[parentIndex]);
+          })
+        }
+/*
+        zipper(parent, parent + ".zip", function () {
+          parentIndex += 1;
+          recursiveCompress(parents[parentIndex]);
+        })
+/*
         utility.longWalk(parent, function (children) {
           var counter = children.length;
           var increment = 0;
@@ -142,48 +203,18 @@ function zipZap () {
               }
             }
           })
-        })        
+        })
+*/
       }
     }
     recursiveCompress(parents[0]);
   }) 
 }
 
-function pingPong () {
-  var base = argv.vault 
-    ? argv.vault
-    : path.dirname(require.main.filename);
-  var dirs = utility.buildDirs(base);
-  function recursivePing (start) {
-    start = typeof start !== "undefined" ? start : 1;
-    var base = "http://geothermaldata.org/csw?";
-    utility.buildGetRecords(base, start, 100, function (getUrl) {
-      parse.parseCsw(getUrl, function (data) {
-        if (data) {
-          data["csw"] = base;
-          async.waterfall([
-            function (callback) {
-              pingLogger(dirs, data, callback);
-            },
-          ])
-        }
-
-        if (data["next"]) {
-          console.log("NEXT: ", data["next"]);
-          if (data["next"] > 0) recursivePing(data["next"]);
-        }
-      })
-    })    
-  }
-  recursivePing();
-}
-
 function awsGlacier () {
-  var vault = "ngds-archive";
-  var base = argv.vault
-    ? argv.vault
-    : path.dirname(require.main.filename);
+  var base = path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
+  var vault = argv.vault;
   utility.longWalk(dirs["record"], function (zips) {
     async.each(zips, function (zip) {
       archiver.uploadToGlacier(zip, vault, function (res) {
@@ -283,6 +314,7 @@ function processor (construct, callback) {
         handle.buildDirectory(data["child"], function (child) {
           handle.writeXML(data["outXML"], construct["fullRecord"], function () {
             if (data["linkage"].search("service=WFS") !== -1) {
+              /*
               processWFS(data["child"], data["linkage"], function (res) {
                 if (res) {
                   var wfsXML = path.join(res["dir"], res["xmlId"]);
@@ -295,6 +327,7 @@ function processor (construct, callback) {
                   })                  
                 }
               })
+              */
             } else {
               handle.download(data["child"], data["linkage"], function () {
                 increment += 1;
