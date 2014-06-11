@@ -51,7 +51,7 @@ var argv = require("yargs")
 
   .alias("d", "download")
   .describe("d", "Scrape a CSW and download linkages")
-  .demand("c")
+//  .demand("c")
   .argv;
 
 var cmdQueue = [];
@@ -146,7 +146,7 @@ function zipZap () {
   utility.longWalk(dirs["record"], function (parents) {
     var parentCounter = parents.length;
     var parentIndex = 0;
-    function recursiveCompress(parent) {
+    function recursiveCompress (parent) {
       var parentExt = path.extname(parent);
       if (parentExt === ".zip") {
         parentIndex += 1;
@@ -154,62 +154,44 @@ function zipZap () {
           recursiveCompress(parents[parentIndex]);          
         }
       }
+
       if (parentExt !== ".zip") {
         parentIndex += 1;
         if (parentIndex <= parentCounter) {
           utility.longWalk(parent, function (children) {
-            var counter = children.length;
-            var increment = 0;
-            async.each(children, function (child) {
-              if (path.extname(child) !== ".zip") {
-                console.log(child);
-              }
-            })
-            recursiveCompress(parents[parentIndex]);
-          })
-        }
-/*
-        zipper(parent, parent + ".zip", function () {
-          parentIndex += 1;
-          recursiveCompress(parents[parentIndex]);
-        })
-/*
-        utility.longWalk(parent, function (children) {
-          var counter = children.length;
-          var increment = 0;
-          _.each(children, function (child) {
-            var ext = path.extname(child);
-            if (ext !== ".zip") {
-              zipper(child, child + ".zip", function () {
-                increment += 1;
-                if (increment === counter) {
-                  zipper(parent, parent + ".zip", function () {
-                    parentIndex += 1;
-                    console.log("Compressed ", parent + ".zip");
-                    if (parentIndex !== parentCounter) {
-                      recursiveCompress(parents[parentIndex]);
-                    }
+            var childCounter = children.length;
+            var childIndex = 0;
+            function recursiveZip (child) {
+              var childExt = path.extname(child);
+              if (childExt === ".zip") {
+                childIndex += 1;
+                if (childIndex !== childCounter) {
+                  zipper(child, child + ".zip", function () {
+                    recursiveZip(children[childIndex]);                    
                   })
+                } else {
+                  recursiveCompress(parents[parentIndex]);
                 }
-              })
-            } else {
-              increment += 1;
-              if (increment === counter) {
-                zipper(parent, parent + ".zip", function () {
-                  parentIndex += 1;
-                  console.log("Compressed ", parent + ".zip");
-                  if (parentIndex !== parentCounter) {
-                    recursiveCompress(parents[parentIndex]);
-                  }
-                })
+              }
+
+              if (childExt !== ".zip") {
+                childIndex += 1;
+                if (childIndex !== childCounter) {
+                  zipper(child, child + ".zip", function () {
+                    recursiveZip(children[childIndex]);                    
+                  })
+                } else {
+                  recursiveCompress(parents[parentIndex]);
+                }                
               }
             }
+
+            recursiveZip(children[childIndex]);
           })
-        })
-*/
+        }
       }
     }
-    recursiveCompress(parents[0]);
+    recursiveCompress(parents[parentIndex]);
   }) 
 }
 
