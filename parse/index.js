@@ -22,6 +22,7 @@ module.exports = {
 
     serverDomain.on("error", function (err) {
       console.log(err);
+      callback();
     });
 
     serverDomain.run(function () {
@@ -106,7 +107,13 @@ module.exports = {
     var directory = res.directory;
     var saxParser = sax.createStream(true, {lowercasetags: true, trim: true});
     var feature = new saxpath.SaXPath(saxParser, "//gml:featureMember");
-    
+    var serverDomain = domain.create();
+
+    serverDomain.on("error", function (err) {
+      console.log(err);
+      callback();
+    });
+
     saxParser.on("error", function (error) {
       callback({
         "link": linkage,
@@ -114,67 +121,76 @@ module.exports = {
       });
     });
 
-    http.get(linkage, function (response) {
-      response.pipe(saxParser);
+    serverDomain.run(function () {
+      http.get(linkage, function (res) {
+        res.pipe(saxParser);
 
-      response.on("error", function (error) {
-        console.log(error);
-      })
+        feature.on("match", function (xml) {
+          var logInfo = {};
+          logInfo["linkages"] = [];
 
-      process.on("uncaughtException", function (error) {
-        console.log("EXCEPTION: " + error + linkage);
+          var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>");
+          var boreUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>");
+          var logType = xml.match("<aasg:LogTypeTerm>(.*?)</aasg:LogTypeTerm>");
+
+          if (fileUrl) {
+            fileUrl = fileUrl[1];
+            var illegalChars = [",", ";", "|"];
+            _.each(illegalChars, function (char) {
+              if (fileUrl.indexOf(char) > -1) {
+                files = fileUrl.split(char);
+                _.each(files, function (file) {
+                  logInfo["linkages"].push(file);
+                })
+              } else {
+                logInfo["linkages"].push(fileUrl);
+              }
+              var parsedUrl = url.parse(logInfo["linkages"][0]);
+              logInfo["host"] = parsedUrl["hostname"].replace(/[^a-zA-Z0-9_.-]/gim, "_");            
+            });
+            var fileSlash = fileUrl.replace(/\/+$/, "");
+            var filePath = fileSlash.split("/").pop();
+            var fileSplit = filePath.split(".")[0];
+            logInfo["recordId"] = fileSplit;
+            logInfo["xmlId"] = fileSplit + ".xml";
+          } else if (boreUri) {
+            boreUri = boreUri[1];
+            logType = typeof logType[1] !== "undefined" ? logType : "";
+            if (boreUri.indexOf("uri-gin") > -1) {
+              var urlPath = boreUri.split("uri-gin")[1];
+              logInfo["recordId"] = urlPath.replace("/", "_") + "_" + logType;
+              logInfo["xmlId"] = urlPath.replace("/", "_") + "_" + logType + ".xml";
+            }
+          }
+
+//          logInfo["directory"] = directory + logInfo["xmlId"];
+
+          if (typeof callback === "function") {
+            callback({
+              "wfs": linkage,
+              "dir": directory,
+              "linkages": _.uniq(logInfo["linkages"]),
+              "xmlId": logInfo["xmlId"],
+              "id": logInfo["recordId"],
+              "host": logInfo["host"],
+              "xml": xml,
+            })
+          }
+        })
+        
+        feature.on("end", function () {
+          callback(null, "end_of_stream");
+        })
+
+        res.on("end", function () {
+
+        })
+
+        res.on("error", function (err) {
+          throw err;
+        })
       })
     })
-
-    feature.on("match", function (xml) {
-      var logInfo = {};
-      logInfo["linkages"] = [];
-
-      var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>");
-      var boreUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>");
-      var logType = xml.match("<aasg:LogTypeTerm>(.*?)</aasg:LogTypeTerm>");
-
-      if (fileUrl) {
-        fileUrl = fileUrl[1];
-        var illegalChars = [",", ";", "|"];
-        _.each(illegalChars, function (char) {
-          if (fileUrl.indexOf(char) > -1) {
-            files = fileUrl.split(char);
-            _.each(files, function (file) {
-              logInfo["linkages"].push(file);
-            })
-          } else {
-            logInfo["linkages"].push(fileUrl);
-          }
-          var parsedUrl = url.parse(logInfo["linkages"][0]);
-          logInfo["host"] = parsedUrl["hostname"].replace(/[^a-zA-Z0-9_.-]/gim, "_");            
-        });
-        var filePath = fileUrl.split("/").pop();
-        var fileSplit = filePath.split(".")[0];
-        logInfo["recordId"] = fileSplit;
-        logInfo["xmlId"] = fileSplit + ".xml";
-      } else if (boreUri) {
-        boreUri = boreUri[1];
-        logType = typeof logType[1] !== "undefined" ? logType : "";
-        if (boreUri.indexOf("uri-gin") > -1) {
-          var urlPath = boreUri.split("uri-gin")[1];
-          logInfo["recordId"] = urlPath.replace("/", "_") + "_" + logType;
-          logInfo["xmlId"] = urlPath.replace("/", "_") + "_" + logType + ".xml";
-        }
-      }
-
-      if (typeof callback === "function") {
-        callback({
-          "wfs": linkage,
-          "dir": directory,
-          "linkages": _.uniq(logInfo["linkages"]),
-          "xmlId": logInfo["xmlId"],
-          "id": logInfo["recordId"],
-          "host": logInfo["host"],
-          "xml": xml,
-        })
-      }
-    }) 
   },
   parseGetFeaturesWFS: function (res, callback) {
     var directory = res.directory;

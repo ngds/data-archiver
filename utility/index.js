@@ -6,7 +6,7 @@ var _ = require("underscore");
 module.exports = {
   buildDirs: function (base) {
     var dirs = {};
-    dirs["out"] = path.join(base, "outputs");
+    dirs["out"] = path.join(base, "outputs2");
     dirs["record"] = path.join(dirs["out"], "records");
     dirs["status"] = path.join(dirs["out"], "status");
 

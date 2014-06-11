@@ -59,6 +59,7 @@ if (argv.download) cmdQueue.push(scrapeCsw);
 if (argv.pingpong) cmdQueue.push(pingPong);
 if (argv.zip) cmdQueue.push(zipZap);
 if (argv.glacier) cmdQueue.push(awsGlacier);
+if (argv.wfs) cmdQueue.push(onlyProcessWfS);
 
 async.series(cmdQueue);
 
@@ -165,10 +166,9 @@ function zipZap () {
               var childExt = path.extname(child);
               if (childExt === ".zip") {
                 childIndex += 1;
-                if (childIndex !== childCounter) {
-                  zipper(child, child + ".zip", function () {
-                    recursiveZip(children[childIndex]);                    
-                  })
+                if (childIndex <= childCounter) {
+                  console.log(child);
+                  recursiveZip(children[childIndex]);
                 } else {
                   recursiveCompress(parents[parentIndex]);
                 }
@@ -176,8 +176,9 @@ function zipZap () {
 
               if (childExt !== ".zip") {
                 childIndex += 1;
-                if (childIndex !== childCounter) {
+                if (childIndex <= childCounter) {
                   zipper(child, child + ".zip", function () {
+                    console.log(child + ".zip");
                     recursiveZip(children[childIndex]);                    
                   })
                 } else {
@@ -264,7 +265,7 @@ function constructor (dirs, item, callback) {
   callback(null, construct);
 };
 
-function onlyProcessWFS (dir, linkage, callback) {
+function onlyProcessWfS (dir, linkage, callback) {
   var base = path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
   var base = argv.csw;
@@ -285,7 +286,7 @@ function onlyProcessWFS (dir, linkage, callback) {
               constructor(dirs, data, callback);
             },
             function (data, callback) {
-              processor(data, callback);
+              processorWfs(data, callback);
             },
           ], function (error, result) {
             if (error) callback(error);
@@ -304,37 +305,74 @@ function onlyProcessWFS (dir, linkage, callback) {
 
 function processWFS (dir, linkage, callback) {
   if (linkage.search("service=WFS") > -1) {
-    parse.parseGetCapabilitiesWFS(linkage, function (wfs) {
-      var counter = wfs.length;
-      var increment = 0;
-      async.each(wfs, function (getWfs) {
-        handle.configurePaths(dir, getWfs, function (res) {
-          var out = path.join(res["directory"], res["file"]);
-          handle.buildDirectory(out, function (path) {
-            var urlQuery = url.parse(getWfs)["query"];
+    parse.parseGetCapabilitiesWFS(linkage, function (wfsGet) {
+      var wfsCounter = wfsGet.length;
+      var wfsIndex = 0;
+      function recursiveWfs (wfs) {
+        handle.configurePaths(dir, wfs, function (res) {
+          var outPath = path.join(res["directory"], res["file"]);
+          handle.buildDirectory(outPath, function (out) {
+            console.log(outPath);
+            var urlQuery = url.parse(wfs)["query"];
             var typeName = querystring.parse(urlQuery)["typeNames"];
             if (typeName === "aasg:WellLog") {
               parse.parseWellLogsWFS(res, function (data) {
-                var wfsXML = path.join(path, data["xmlId"]);
-                handle.writeXML(wfsXML, res["xml"], function () {
-                  async.each(res["linkages"], function (linkage) {
-                    handle.download()
+                if (data) {
+                  var outRecord = path.join(outPath, data["id"]);
+                  handle.buildDirectory(outRecord, function (dir) {
+                    var wfsXml = path.join(outRecord, data["xmlId"]);
+                    handle.writeXML(wfsXml, res["xml"], function () {
+                      handle.download(dir, linkage, function (end) {
+                        if (end === "end_of_stream") {
+                          wfsIndex += 1;
+                          if (wfsIndex < wfsCounter) {
+                            recursiveWfs(wfsGet[wfsIndex]);
+                          }
+                          if (wfsIndex === wfsCounter) {
+                            callback();
+                          }
+                        }
+                      })
+                    })
                   })
-                })
+                }
               })
             } else {
+              res["directory"] = outPath;
               parse.parseGetFeaturesWFS(res, function () {
-                increment += 1;
-                if (increment === counter) {
+                wfsIndex += 1;
+                if (wfsIndex < wfsCounter) {
+                  recursiveWfs(wfsGet[wfsIndex]);
+                }
+                if (wfsIndex === wfsCounter) {
                   callback();
                 }
               })
-            }            
+            }
+          })
+        })
+      }
+      recursiveWfs(wfsGet[wfsIndex]);
+    })    
+  }
+}
+
+function processorWfs (construct, callback) {
+  var counter = construct["linkages"].length;
+  var increment = 0;
+  async.each(construct["linkages"], function (data) {
+    if (typeof data !== "undefined") {
+      handle.buildDirectory(data["parent"], function (parent) {
+        handle.buildDirectory(data["child"], function (child) {
+          handle.writeXML(data["outXML"], construct["fullRecord"], function () {
+            processWFS(data["child"], data["linkage"], function () {
+              console.log("ALL DONE: ", data["child"]);
+            })
           })
         })
       })
-    })    
-  }
+    }
+  })
 }
 
 function processor (construct, callback) {
@@ -350,20 +388,6 @@ function processor (construct, callback) {
               if (increment === counter) {
                 callback(null, data["child"], data["childArchive"]);
               }
-              /*
-              processWFS(data["child"], data["linkage"], function (res) {
-                if (res) {
-                  var wfsXML = path.join(res["dir"], res["xmlId"]);
-                  handle.writeXML(wfsXML, res["xml"], function () {
-                    async.each(res["linkages"], function (linkage) {                      
-                      handle.download(res["dir"], linkage, function () {
-                      
-                      })
-                    })
-                  })                  
-                }
-              })
-              */
             } else {
               handle.download(data["child"], data["linkage"], function () {
                 increment += 1;
