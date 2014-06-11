@@ -132,6 +132,7 @@ module.exports = {
           var fileUrl = xml.match("<aasg:ScannedFileURL>(.*?)</aasg:ScannedFileURL>");
           var boreUri = xml.match("<aasg:WellBoreURI>(.*?)</aasg:WellBoreURI>");
           var logType = xml.match("<aasg:LogTypeTerm>(.*?)</aasg:LogTypeTerm>");
+          var gmlId = xml.match('<aasg:WellLog gml:id="(.*?)">');
 
           if (fileUrl) {
             fileUrl = fileUrl[1];
@@ -163,15 +164,13 @@ module.exports = {
             }
           }
 
-//          logInfo["directory"] = directory + logInfo["xmlId"];
-
           if (typeof callback === "function") {
             callback({
               "wfs": linkage,
               "dir": directory,
               "linkages": _.uniq(logInfo["linkages"]),
               "xmlId": logInfo["xmlId"],
-              "id": logInfo["recordId"],
+              "id": gmlId[1],
               "host": logInfo["host"],
               "xml": xml,
             })

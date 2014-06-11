@@ -145,24 +145,27 @@ module.exports = {
           var output = path.join(directory, file);
 
           if (res.linkage.indexOf("ftp") > -1) {
-            module.downloadFTP(res.linkage, output, function () {
-              callback();
+            module.downloadFTP(res.linkage, output, function (err, res) {
+              if (err) callback(err);
+              else callback(res);
             })
           } 
           else if (res.linkage.indexOf("http") > -1 && 
                    res.linkage.indexOf("https") <= -1) {
-            module.downloadHTTP(res.linkage, output, function () {
-              callback();
+            module.downloadHTTP(res.linkage, output, function (err, res) {
+              if (err) callback(err);
+              else callback(res);
             })
           }
           else if (res.linkage.indexOf("https") > -1) {
-            module.downloadHTTPS(res.linkage, output, function () {
-              callback();
+            module.downloadHTTPS(res.linkage, output, function (err, res) {
+              if (err) callback(err);
+              else callback(res);
             })
           }
         })
       } else {
-        callback();
+        callback("SOMETHING BROKE");
       }
     })
   },

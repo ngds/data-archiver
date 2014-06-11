@@ -312,7 +312,6 @@ function processWFS (dir, linkage, callback) {
         handle.configurePaths(dir, wfs, function (res) {
           var outPath = path.join(res["directory"], res["file"]);
           handle.buildDirectory(outPath, function (out) {
-            console.log(outPath);
             var urlQuery = url.parse(wfs)["query"];
             var typeName = querystring.parse(urlQuery)["typeNames"];
             if (typeName === "aasg:WellLog") {
@@ -320,21 +319,27 @@ function processWFS (dir, linkage, callback) {
                 if (data) {
                   var outRecord = path.join(outPath, data["id"]);
                   handle.buildDirectory(outRecord, function (dir) {
-                    var wfsXml = path.join(outRecord, data["xmlId"]);
-                    handle.writeXML(wfsXml, res["xml"], function () {
-                      handle.download(dir, linkage, function (end) {
-                        if (end === "end_of_stream") {
-                          wfsIndex += 1;
-                          if (wfsIndex < wfsCounter) {
-                            recursiveWfs(wfsGet[wfsIndex]);
-                          }
-                          if (wfsIndex === wfsCounter) {
-                            callback();
-                          }
-                        }
+                    var wfsXml = path.join(outRecord, data["id"] + ".xml");
+                    handle.writeXML(wfsXml, data["xml"], function () {
+                      async.each(data["linkages"], function (linkage) {
+
+                        handle.download(outRecord, linkage, function (err, res) {
+                          if (err) console.log(err);
+                          else console.log(res);
+                          console.log("DOWNLOADED:", outRecord, linkage)
+                        })                        
                       })
                     })
                   })
+                }
+                if (data === "end_of_stream") {
+                  wfsIndex += 1;
+                  if (wfsIndex < wfsCounter) {
+                    recursiveWfs(wfsGet[wfsIndex]);
+                  }
+                  if (wfsIndex === wfsCounter) {
+                    callback();
+                  }
                 }
               })
             } else {
