@@ -304,46 +304,31 @@ function onlyProcessWfS (dir, linkage, callback) {
 }
 
 function processWFS (dir, linkage, callback) {
-  if (linkage.search("service=WFS") > -1) {
-    parse.parseGetCapabilitiesWFS(linkage, function (wfsGet) {
-      var wfsCounter = wfsGet.length;
-      var wfsIndex = 0;
-      function recursiveWfs (wfs) {
-        handle.configurePaths(dir, wfs, function (res) {
-          var outPath = path.join(res["directory"], res["file"]);
-          handle.buildDirectory(outPath, function (out) {
-            var urlQuery = url.parse(wfs)["query"];
-            var typeName = querystring.parse(urlQuery)["typeNames"];
-            if (typeName === "aasg:WellLog") {
-              parse.parseWellLogsWFS(res, function (data) {
-                if (data) {
-                  var outRecord = path.join(outPath, data["id"]);
-                  handle.buildDirectory(outRecord, function (dir) {
-                    var wfsXml = path.join(outRecord, data["id"] + ".xml");
-                    handle.writeXML(wfsXml, data["xml"], function () {
-                      async.each(data["linkages"], function (linkage) {
-
-                        handle.download(outRecord, linkage, function (res) {
-                          console.log("RES:", res);
-                          console.log("DOWNLOADED:", outRecord, linkage)
-                        })                        
-                      })
+  parse.parseGetCapabilitiesWFS(linkage, function (wfsGet) {
+    var wfsCounter = wfsGet.length;
+    var wfsIndex = 0;
+    function recursiveWfs (wfs) {
+      handle.configurePaths(dir, wfs, function (res) {
+        var outPath = path.join(res["directory"], res["file"]);
+        handle.buildDirectory(outPath, function (out) {
+          var urlQuery = url.parse(wfs)["query"];
+          var typeName = querystring.parse(urlQuery)["typeNames"];
+          if (typeName === "aasg:WellLog") {
+            parse.parseWellLogsWFS(res, function (data) {
+              if (data) {
+                var outRecord = path.join(outPath, data["id"]);
+                handle.buildDirectory(outRecord, function (dir) {
+                  var wfsXml = path.join(outRecord, data["id"] + ".xml");
+                  handle.writeXML(wfsXml, data["xml"], function () {
+                    async.each(data["linkages"], function (linkage) {
+                      handle.download(outRecord, linkage, function (res) {
+                        console.log("RES:", res);
+                      })                        
                     })
                   })
-                }
-                if (data === "end_of_stream") {
-                  wfsIndex += 1;
-                  if (wfsIndex < wfsCounter) {
-                    recursiveWfs(wfsGet[wfsIndex]);
-                  }
-                  if (wfsIndex === wfsCounter) {
-                    callback();
-                  }
-                }
-              })
-            } else {
-              res["directory"] = outPath;
-              parse.parseGetFeaturesWFS(res, function () {
+                })
+              }
+              if (data === "end_of_stream") {
                 wfsIndex += 1;
                 if (wfsIndex < wfsCounter) {
                   recursiveWfs(wfsGet[wfsIndex]);
@@ -351,14 +336,25 @@ function processWFS (dir, linkage, callback) {
                 if (wfsIndex === wfsCounter) {
                   callback();
                 }
-              })
-            }
-          })
+              }
+            })
+          } else {
+            res["directory"] = outPath;
+            parse.parseGetFeaturesWFS(res, function () {
+              wfsIndex += 1;
+              if (wfsIndex < wfsCounter) {
+                recursiveWfs(wfsGet[wfsIndex]);
+              }
+              if (wfsIndex === wfsCounter) {
+                callback();
+              }
+            })
+          }
         })
-      }
-      recursiveWfs(wfsGet[wfsIndex]);
-    })    
-  }
+      })
+    }
+    recursiveWfs(wfsGet[wfsIndex]);
+  })    
 }
 
 function processorWfs (construct, callback) {
@@ -368,11 +364,11 @@ function processorWfs (construct, callback) {
     if (typeof data !== "undefined") {
       handle.buildDirectory(data["parent"], function (parent) {
         handle.buildDirectory(data["child"], function (child) {
-          handle.writeXML(data["outXML"], construct["fullRecord"], function () {
+          if (data["linkage"].search("service=WFS") > -1) {
             processWFS(data["child"], data["linkage"], function () {
               console.log("ALL DONE: ", data["child"]);
             })
-          })
+          }
         })
       })
     }

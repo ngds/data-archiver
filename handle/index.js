@@ -133,7 +133,7 @@ module.exports = {
   },
   download: function (directory, linkage, callback) {
     var module = this;
-    module.pingPong(linkage, function (err, res) {
+    module.pingPong(linkage, function (err, res) {           
       if (res && res["call"].statusCode === 200) {
         var linkage = res["linkage"];
         module.configurePaths(directory, linkage, function (res) {
@@ -162,7 +162,7 @@ module.exports = {
           }
         })
       } else {
-        callback("SOMETHING BROKE");
+        callback("SOMETHING BROKE " + res);
       }
     })
   },
