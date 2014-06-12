@@ -30,7 +30,7 @@ module.exports = {
   downloadFTP: function (linkage, path, callback) {
     ftp.get(linkage, path, function (error, response) {
       if (error) callback(error);
-      else callback();
+      else callback(response);
     })
   },
   downloadHTTP: function (linkage, path, callback) {
@@ -46,18 +46,16 @@ module.exports = {
         res.pipe(file);
 
         file.on("close", function () {
-          callback();
+          callback(path);
         });
 
         file.on("error", function (err) {
-          throw err;
-          callback();
+          callback(err);
         })
 
         res.on("error", function (err) {
           file.end();
-          throw err;
-          callback();
+          callback(err);
         })
       })
     })
@@ -75,7 +73,7 @@ module.exports = {
         res.pipe(file);
 
         file.on("close", function () {
-          callback();
+          callback(path);
         });
 
         file.on("error", function (err) {
@@ -84,7 +82,6 @@ module.exports = {
 
         res.on("error", function (err) {
           file.end();
-          throw err;
           callback(err);
         })
       })

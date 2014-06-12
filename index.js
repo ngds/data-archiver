@@ -323,9 +323,8 @@ function processWFS (dir, linkage, callback) {
                     handle.writeXML(wfsXml, data["xml"], function () {
                       async.each(data["linkages"], function (linkage) {
 
-                        handle.download(outRecord, linkage, function (err, res) {
-                          if (err) console.log(err);
-                          else console.log(res);
+                        handle.download(outRecord, linkage, function (res) {
+                          console.log("RES:", res);
                           console.log("DOWNLOADED:", outRecord, linkage)
                         })                        
                       })

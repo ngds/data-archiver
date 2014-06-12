@@ -123,6 +123,7 @@ module.exports = {
 
     serverDomain.run(function () {
       http.get(linkage, function (res) {
+
         res.pipe(saxParser);
 
         feature.on("match", function (xml) {
