@@ -390,6 +390,7 @@ function processor (construct, callback) {
               }
             } else {
               handle.download(data["child"], data["linkage"], function () {
+                console.log(data["child"])
                 increment += 1;
                 if (increment === counter) {
                   callback(null, data["child"], data["childArchive"]);                
