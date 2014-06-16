@@ -182,7 +182,10 @@ function zipZap () {
                     recursiveZip(children[childIndex]);                    
                   })
                 } else {
-                  recursiveCompress(parents[parentIndex]);
+                  zipper(parent, parent + ".zip", function () {
+                    console.log(parent + ".zip");
+                    recursiveCompress(parents[parentIndex]);
+                  })
                 }                
               }
             }
@@ -201,11 +204,20 @@ function awsGlacier () {
   var dirs = utility.buildDirs(base);
   var vault = argv.vault;
   utility.longWalk(dirs["record"], function (zips) {
-    async.each(zips, function (zip) {
+    var zipsCounter = zips.length;
+    var increment = 0;
+    function recursiveUpload (zip) {
       archiver.uploadToGlacier(zip, vault, function (res) {
+        increment += 1;
         console.log(res);
+        if (increment < zipsCounter) {
+          recursiveUpload(zips[increment]);
+        } else {
+          console.log("Archive to AWS Glacier is complete");
+        }
       })
-    })
+    }
+    recursiveUpload(zips[increment]);
   })
 }
 
