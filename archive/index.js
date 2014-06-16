@@ -62,16 +62,19 @@ module.exports = {
         rangeStart = (rangeEnd - chunk.length);
         treeHashStream.update(chunk);
 
-        var partParams = {
-          vaultName: vault,
-          uploadId: part.uploadId,
-          range: "bytes " + rangeStart + "-" + (rangeEnd-1) + "/*",
-          body: chunk,
-        };
-        glacier.uploadMultipartPart(partParams, function (upErr, upData) {
-          if (upErr) callback(upErr);
-          console.log("Completed part ", this.request.params.range);
-        })
+        if (part.uploadId) {
+          var partParams = {
+            vaultName: vault,
+            uploadId: part.uploadId,
+            range: "bytes " + rangeStart + "-" + (rangeEnd-1) + "/*",
+            body: chunk,
+          };
+
+          glacier.uploadMultipartPart(partParams, function (upErr, upData) {
+            if (upErr) callback(upErr);
+            console.log("Completed part ", this.request.params.range);
+          })          
+        }
       });
       
       block.on("end", function () {
@@ -93,7 +96,7 @@ module.exports = {
             var delta = (new Date() - startTime) / 1000;
             console.log("Completed upload in", delta, "seconds");
             console.log("Archive ID:", cData.archiveId);
-            console.log("Checksum:", data.checksum);
+            console.log("Checksum:", cdata.checksum);
             callback(cData);
           }
         })

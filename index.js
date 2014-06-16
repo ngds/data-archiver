@@ -207,15 +207,18 @@ function awsGlacier () {
     var zipsCounter = zips.length;
     var increment = 0;
     function recursiveUpload (zip) {
-      archiver.uploadToGlacier(zip, vault, function (res) {
-        increment += 1;
-        console.log(res);
-        if (increment < zipsCounter) {
-          recursiveUpload(zips[increment]);
-        } else {
-          console.log("Archive to AWS Glacier is complete");
-        }
-      })
+      var size = fs.statSync(zip).size;
+      if (size < 5368709120) {
+        archiver.uploadToGlacier(zip, vault, function (res) {
+          increment += 1;
+          console.log(res);
+          if (increment < zipsCounter) {
+            recursiveUpload(zips[increment]);
+          } else {
+            console.log("Archive to AWS Glacier is complete");
+          }
+        })        
+      }
     }
     recursiveUpload(zips[increment]);
   })
