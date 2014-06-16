@@ -44,9 +44,6 @@ module.exports = {
     var glacier = new aws.Glacier();
     var startTime = new Date();
     var partSize = 1024 * 1024;
-    var treeHashStream = treeHash.createTreeHashStream();
-    var block = new blockStream(partSize);
-    var fileStream = fs.createReadStream(compressed);
     var params = {vaultName: vault, partSize: partSize.toString()}; 
     var rangeStart = 0;
     var rangeEnd = 0;
@@ -55,32 +52,35 @@ module.exports = {
       if (err) callback(err);
       else console.log("Glacier upload ID: ", part.uploadId);
 
+      var treeHashStream = treeHash.createTreeHashStream();
+      var block = new blockStream(partSize);
+      var fileStream = fs.createReadStream(compressed);
       fileStream.pipe(block);
 
       block.on("data", function (chunk) {
         rangeEnd += chunk.length;
         rangeStart = (rangeEnd - chunk.length);
-
-        console.log(rangeStart, rangeEnd);
+        treeHashStream.update(chunk);
 
         var partParams = {
           vaultName: vault,
           uploadId: part.uploadId,
-          range: "bytes " + rangeStart + "-" + rangeEnd + "/*",
+          range: "bytes " + rangeStart + "-" + (rangeEnd-1) + "/*",
           body: chunk,
         };
         glacier.uploadMultipartPart(partParams, function (upErr, upData) {
           if (upErr) callback(upErr);
           console.log("Completed part ", this.request.params.range);
         })
-        treeHashStream.update(chunk);
       });
       
       block.on("end", function () {
         var totalTreeHash = treeHashStream.digest();
+        
         var doneParams = {
           vaultName: vault,
           uploadId: part.uploadId,
+          archiveSize: String(rangeEnd),
           checksum: totalTreeHash,
         };
 
