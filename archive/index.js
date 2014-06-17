@@ -39,68 +39,13 @@ module.exports = {
       }
     });
   },
-  uploadToGlacier: function (compressed, vault, callback) {
+  uploadToS3: function (compressed, callback) {
     aws.config.loadFromPath("./awsConfig.json");
-    var glacier = new aws.Glacier();
-    var startTime = new Date();
-    var partSize = 1024 * 1024;
-    var params = {vaultName: vault, partSize: partSize.toString()}; 
-    var rangeStart = 0;
-    var rangeEnd = 0;
-
-    glacier.initiateMultipartUpload(params, function (err, part) {
+    var s3 = new aws.S3({params: {Bucket: "ngds-archive"}});
+    var data = {Key: String(compressed), Body: compressed};
+    s3.putObject(data, function (err, data) {
       if (err) callback(err);
-      else console.log("Glacier upload ID: ", part.uploadId);
-
-      var treeHashStream = treeHash.createTreeHashStream();
-      var block = new blockStream(partSize);
-      var fileStream = fs.createReadStream(compressed);
-      fileStream.pipe(block);
-
-      block.on("data", function (chunk) {
-        rangeEnd += chunk.length;
-        rangeStart = (rangeEnd - chunk.length);
-        treeHashStream.update(chunk);
-
-        if (part.uploadId) {
-          var partParams = {
-            vaultName: vault,
-            uploadId: part.uploadId,
-            range: "bytes " + rangeStart + "-" + (rangeEnd-1) + "/*",
-            body: chunk,
-          };
-
-          glacier.uploadMultipartPart(partParams, function (upErr, upData) {
-            if (upErr) callback(upErr);
-            console.log("Completed part ", this.request.params.range);
-          })          
-        }
-      });
-      
-      block.on("end", function () {
-        var totalTreeHash = treeHashStream.digest();
-        
-        var doneParams = {
-          vaultName: vault,
-          uploadId: part.uploadId,
-          archiveSize: String(rangeEnd),
-          checksum: totalTreeHash,
-        };
-
-        console.log("Completing upload...");
-        glacier.completeMultipartUpload(doneParams, function (cErr, cData) {
-          if (cErr) {
-            console.log("An error occurred while uploading the archive.");
-            callback(cErr);
-          } else {
-            var delta = (new Date() - startTime) / 1000;
-            console.log("Completed upload in", delta, "seconds");
-            console.log("Archive ID:", cData.archiveId);
-            console.log("Checksum:", cdata.checksum);
-            callback(cData);
-          }
-        })
-      });
+      else callback(data);
     })
   },
 };

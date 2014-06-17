@@ -203,24 +203,33 @@ function awsGlacier () {
   var base = path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
   var vault = argv.vault;
-  utility.longWalk(dirs["record"], function (zips) {
-    var zipsCounter = zips.length;
-    var increment = 0;
-    function recursiveUpload (zip) {
-      var size = fs.statSync(zip).size;
-      if (size < 5368709120) {
-        archiver.uploadToGlacier(zip, vault, function (res) {
-          increment += 1;
-          console.log(res);
-          if (increment < zipsCounter) {
-            recursiveUpload(zips[increment]);
-          } else {
-            console.log("Archive to AWS Glacier is complete");
-          }
-        })        
-      }
+  utility.longWalk(dirs["record"], function (parents) {
+    var parentCounter = parents.length;
+    var parentIndex = 0;
+    function recursiveWalk (parent) {
+      utility.longWalk(parent, function (children) {
+        var childCounter = children.length;
+        var childIndex = 0;
+        function recursiveUpload (child) {
+          var s3Path = child.split("/outputs/records")[1];
+          archiver.uploadToS3(s3Path, function (res) {
+            console.log(res);
+            childIndex += 1;
+            if (childIndex < childCounter) {
+              recursiveUpload(children[childIndex]);
+            }
+            if (childIndex === childCounter) {
+              parentIndex += 1;
+              if (parentIndex < parentCounter) {
+                recursiveWalk(parents[parentIndex]);        
+              }              
+            }
+          })
+        }
+        recursiveUpload(children[childIndex]);
+      })
     }
-    recursiveUpload(zips[increment]);
+    recursiveWalk(parents[parentIndex]);
   })
 }
 
