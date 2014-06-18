@@ -210,23 +210,33 @@ function awsGlacier () {
       utility.longWalk(parent, function (children) {
         var childCounter = children.length;
         var childIndex = 0;
-        function recursiveUpload (child) {
-          var s3Path = child.split("/outputs/records")[1];
-          archiver.uploadToS3(s3Path, function (res) {
-            console.log(res);
-            childIndex += 1;
-            if (childIndex < childCounter) {
-              recursiveUpload(children[childIndex]);
+        function recursiveStroll (child) {
+          utility.longWalk(child, function (cFile) {
+            var cFileCounter = cFile.length;
+            var cFileIndex = 0;
+            function recursiveUpload (file) {
+              archiver.uploadToS3(file, function (res) {
+                console.log(res);
+                cFileIndex += 1;
+                if (cFileIndex < cFileCounter) {
+                  recursiveUpload(cFile[cFileIndex]);
+                }
+                if (cFileIndex === cFileCounter) {
+                  childIndex += 1;
+                  if (childIndex < childCounter) {
+                    recursiveStroll(children[childIndex]);
+                  }
+                  if (childIndex === childCounter) {
+                    parentIndex += 1;
+                    recursiveWalk(parents[parentIndex]);
+                  }
+                }
+              })
             }
-            if (childIndex === childCounter) {
-              parentIndex += 1;
-              if (parentIndex < parentCounter) {
-                recursiveWalk(parents[parentIndex]);        
-              }              
-            }
+            recursiveUpload(cFile[cFileIndex]);
           })
         }
-        recursiveUpload(children[childIndex]);
+        recursiveStroll(children[childIndex]);
       })
     }
     recursiveWalk(parents[parentIndex]);

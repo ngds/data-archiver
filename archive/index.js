@@ -42,10 +42,16 @@ module.exports = {
   uploadToS3: function (compressed, callback) {
     aws.config.loadFromPath("./awsConfig.json");
     var s3 = new aws.S3({params: {Bucket: "ngds-archive"}});
-    var data = {Key: String(compressed), Body: compressed};
-    s3.putObject(data, function (err, data) {
+    fs.readFile(compressed, function (err, res) {
       if (err) callback(err);
-      else callback(data);
+      else {
+        var s3Path = compressed.split("/outputs/records/")[1];
+        var data = {Key: String(s3Path), Body: res};
+        s3.putObject(data, function (err, data) {
+          if (err) callback(err);
+          else callback(data);
+        })        
+      }
     })
   },
 };
