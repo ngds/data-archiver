@@ -8,7 +8,7 @@ var utility = require("./utility");
 var timber = require("./timber");
 var path = require("path");
 var url = require("url");
-var fs = require("fs");
+var fs = require("fs.extra");
 var _ = require("underscore");
 var querystring = require("querystring");
 
@@ -51,14 +51,14 @@ var argv = require("yargs")
 
   .alias("d", "download")
   .describe("d", "Scrape a CSW and download linkages")
-  .demand("c")
+//  .demand("c")
   .argv;
 
 var cmdQueue = [];
 if (argv.download) cmdQueue.push(scrapeCsw);
-if (argv.pingpong) cmdQueue.push(pingPong);
+if (argv.pingpong) cmdQueue.push(pingPongLinks);
 if (argv.zip) cmdQueue.push(zipZap);
-if (argv.glacier) cmdQueue.push(awsGlacier);
+if (argv.s3) cmdQueue.push(awsS3);
 if (argv.wfs) cmdQueue.push(onlyProcessWfS);
 
 async.series(cmdQueue);
@@ -201,7 +201,7 @@ function zipZap () {
   }) 
 }
 
-function awsGlacier () {
+function awsS3 () {
   var base = path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
   var vault = argv.vault;
@@ -224,14 +224,19 @@ function awsGlacier () {
                   recursiveUpload(cFile[cFileIndex]);
                 }
                 if (cFileIndex === cFileCounter) {
-                  childIndex += 1;
-                  if (childIndex < childCounter) {
-                    recursiveStroll(children[childIndex]);
-                  }
-                  if (childIndex === childCounter) {
-                    parentIndex += 1;
-                    recursiveWalk(parents[parentIndex]);
-                  }
+                  fs.rmrf(children[childIndex], function (err, res) {
+                    if (err) console.log(err);
+                    else {
+                      childIndex += 1;
+                      if (childIndex < childCounter) {
+                        recursiveStroll(children[childIndex]);
+                      }
+                      if (childIndex === childCounter) {
+                        parentIndex += 1;
+                        recursiveWalk(parents[parentIndex]);
+                      }                      
+                    }
+                  })
                 }
               })
             }
