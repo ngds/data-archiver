@@ -109,36 +109,38 @@ function scrapeCsw () {
 function pingPong () {
   var base = path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
-  var base = argv.csw;
+  var url = argv.csw;
   var increment = argv.increment;
   var start = argv.start;
   var max = argv.max;
 
-  function recursivePing (base, start, increment, max) {
+  function recursivePing (url, start, increment, max) {
     start = typeof start !== "undefined" ? start : 1;
-    increment = typeof increment !== "undefined" ? increment : 100;
+    increment = typeof increment !== "undefined" ? increment : 10;
     max = typeof max !== "undefined" ? max : 10000000;
-    
-    utility.buildGetRecords(base, start, increment, function (getUrl) {
+
+    utility.buildGetRecords(url, start, increment, function (getUrl) {
       parse.parseCsw(getUrl, function (data) {
         if (data) {
-          data["csw"] = base;
+          data["csw"] = url;
           async.waterfall([
             function (callback) {
               pingLogger(dirs, data, callback);
             },
-          ])
+          ], function (err, res) {
+            if (err) console.log(err);
+          })
         }
 
         if (data["next"]) {
           console.log("NEXT: ", data["next"]);
           if (data["next"] > 0 && data["next"] <= max) 
-            recursivePing(data["next"]);
+            recursivePing(url, data["next"]);
         }
       })
     })    
   }
-  recursivePing(start);
+  recursivePing(url);
 }
 
 function zipZap () {
@@ -245,27 +247,41 @@ function awsGlacier () {
 
 ///////////////////////////////////////////////////////////////////////////////
 function pingLogger (dirs, data, callback) {
-  async.each(data.linkages, function (linkage) {
-    if (typeof linkage !== "undefined") {
-      handle.pingPong(linkage, function (err, res) {
-        if (err) callback(err);
-        if (res) {
-          var status = {
-            "time": new Date().toISOString(),
-            "csw": data["csw"],
-            "id": data["fileId"],
-            "linkage": linkage,
-            "status": res["res"]["statusCode"],
-          }
+  if (data.linkages) {
+    async.each(data.linkages, function (linkage) {
+      if (typeof linkage !== "undefined") {
+        handle.pingPong(linkage, function (err, res) {
+          if (err) callback(err);
+          if (res) {
+            var status;
+            if (res["res"]) {
+              var status = {
+                "time": new Date().toISOString(),
+                "csw": data["csw"],
+                "id": data["fileId"],
+                "linkage": linkage,
+                "status": res["res"]["statusCode"],
+              }            
+            }
+            if (res["call"]) {
+              var status = {
+                "time": new Date().toISOString(),
+                "csw": data["csw"],
+                "id": data["fileId"],
+                "linkage": linkage,
+                "status": res["call"]["statusCode"],
+              }
+            }
 
-          timber.writePingStatus(dirs, status, function (err, res) {
-            if (err) callback(err);
-            else callback();
-          })
-        }
-      })
-    }
-  })
+            timber.writePingStatus(dirs, status, function (err, res) {
+              if (err) callback(err);
+              else callback();
+            })
+          }
+        })
+      }
+    })    
+  }
 }
 
 function constructor (dirs, item, callback) {
