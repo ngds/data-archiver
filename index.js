@@ -8,7 +8,7 @@ var utility = require("./utility");
 var timber = require("./timber");
 var path = require("path");
 var url = require("url");
-var fs = require("fs");
+var fs = require("fs.extra");
 var _ = require("underscore");
 var querystring = require("querystring");
 
@@ -18,7 +18,7 @@ memwatch.on("stats", function (stats) {
 });
 
 var argv = require("yargs")
-  .usage("Command line utility for archiving NGDS data on Amazon Glacier")
+  .usage("Command line utility for archiving NGDS data on Amazon S3")
   .example("$0 -d -c http://geothermaldata.org/csw?", 
     "Scrape an entire CSW and download all linkages")
   
@@ -35,7 +35,7 @@ var argv = require("yargs")
   .describe("i", "Number of metadata records to return per request")
 
   .alias("v", "vault")
-  .describe("v", "Name of Amazon Glacier vault to pipe data to")
+  .describe("v", "Name of Amazon S3 vault to pipe data to")
 
   .alias("w", "wfs")
   .describe("w", "Scrape WFS linkages")
@@ -46,8 +46,8 @@ var argv = require("yargs")
   .alias("z", "zip")
   .describe("z", "Traverse outputs and force compression")
 
-  .alias("g", "glacier")
-  .describe("g", "Stream compressed directory to AWS Glacier")
+  .alias("t", "s3")
+  .describe("t", "Stream compressed directory to AWS S3")
 
   .alias("d", "download")
   .describe("d", "Scrape a CSW and download linkages")
@@ -56,9 +56,9 @@ var argv = require("yargs")
 
 var cmdQueue = [];
 if (argv.download) cmdQueue.push(scrapeCsw);
-if (argv.pingpong) cmdQueue.push(pingPong);
+if (argv.pingpong) cmdQueue.push(pingPongLinks);
 if (argv.zip) cmdQueue.push(zipZap);
-if (argv.glacier) cmdQueue.push(awsGlacier);
+if (argv.s3) cmdQueue.push(awsS3);
 if (argv.wfs) cmdQueue.push(onlyProcessWfS);
 
 async.series(cmdQueue);
@@ -109,36 +109,38 @@ function scrapeCsw () {
 function pingPong () {
   var base = path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
-  var base = argv.csw;
+  var url = argv.csw;
   var increment = argv.increment;
   var start = argv.start;
   var max = argv.max;
 
-  function recursivePing (base, start, increment, max) {
+  function recursivePing (url, start, increment, max) {
     start = typeof start !== "undefined" ? start : 1;
-    increment = typeof increment !== "undefined" ? increment : 100;
+    increment = typeof increment !== "undefined" ? increment : 10;
     max = typeof max !== "undefined" ? max : 10000000;
-    
-    utility.buildGetRecords(base, start, increment, function (getUrl) {
+
+    utility.buildGetRecords(url, start, increment, function (getUrl) {
       parse.parseCsw(getUrl, function (data) {
         if (data) {
-          data["csw"] = base;
+          data["csw"] = url;
           async.waterfall([
             function (callback) {
               pingLogger(dirs, data, callback);
             },
-          ])
+          ], function (err, res) {
+            if (err) console.log(err);
+          })
         }
 
         if (data["next"]) {
           console.log("NEXT: ", data["next"]);
           if (data["next"] > 0 && data["next"] <= max) 
-            recursivePing(data["next"]);
+            recursivePing(url, data["next"]);
         }
       })
     })    
   }
-  recursivePing(start);
+  recursivePing(url);
 }
 
 function zipZap () {
@@ -199,7 +201,7 @@ function zipZap () {
   }) 
 }
 
-function awsGlacier () {
+function awsS3 () {
   var base = path.dirname(require.main.filename);
   var dirs = utility.buildDirs(base);
   var vault = argv.vault;
@@ -222,14 +224,19 @@ function awsGlacier () {
                   recursiveUpload(cFile[cFileIndex]);
                 }
                 if (cFileIndex === cFileCounter) {
-                  childIndex += 1;
-                  if (childIndex < childCounter) {
-                    recursiveStroll(children[childIndex]);
-                  }
-                  if (childIndex === childCounter) {
-                    parentIndex += 1;
-                    recursiveWalk(parents[parentIndex]);
-                  }
+                  fs.rmrf(children[childIndex], function (err, res) {
+                    if (err) console.log(err);
+                    else {
+                      childIndex += 1;
+                      if (childIndex < childCounter) {
+                        recursiveStroll(children[childIndex]);
+                      }
+                      if (childIndex === childCounter) {
+                        parentIndex += 1;
+                        recursiveWalk(parents[parentIndex]);
+                      }                      
+                    }
+                  })
                 }
               })
             }
@@ -244,28 +251,84 @@ function awsGlacier () {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-function pingLogger (dirs, data, callback) {
-  async.each(data.linkages, function (linkage) {
-    if (typeof linkage !== "undefined") {
-      handle.pingPong(linkage, function (err, res) {
-        if (err) callback(err);
-        if (res) {
-          var status = {
-            "time": new Date().toISOString(),
-            "csw": data["csw"],
-            "id": data["fileId"],
-            "linkage": linkage,
-            "status": res["res"]["statusCode"],
-          }
 
-          timber.writePingStatus(dirs, status, function (err, res) {
+function pingHosts (dirs, data, globe, callback) {
+  if (data.linkages) {
+    async.each(data.linkages, function (linkage) {
+      if (typeof linkage !== "undefined") {
+        var host = url.parse(linkage)["host"];
+        if (globe.indexOf(host) > -1) {
+          globe.push(host);
+          handle.pingPong(linkage, function (err, res) {
             if (err) callback(err);
-            else callback();
+            else {
+              var status;
+              if (res["res"]) {
+                var status = {
+                  "time": new Date().toISOString(),
+                  "csw": data["csw"],
+                  "id": data["fileId"],
+                  "linkage": linkage,
+                  "status": res["res"]["statusCode"],
+                }
+              }
+              if (res["call"]) {
+                var status = {
+                  "time": new Date().toISOString(),
+                  "csw": data["csw"],
+                  "id": data["fileId"],
+                  "linkage": linkage,
+                  "status": res["call"]["statusCode"],
+                }
+              }
+              timber.writeHostStatus(dirs, status, function (err, res) {
+                if (err) callback(err);
+                else callback();
+              })
+            }
           })
         }
-      })
-    }
-  })
+      }
+    })
+  }
+}
+
+function pingLogger (dirs, data, callback) {
+  if (data.linkages) {
+    async.each(data.linkages, function (linkage) {
+      if (typeof linkage !== "undefined") {
+        handle.pingPong(linkage, function (err, res) {
+          if (err) callback(err);
+          if (res) {
+            var status;
+            if (res["res"]) {
+              var status = {
+                "time": new Date().toISOString(),
+                "csw": data["csw"],
+                "id": data["fileId"],
+                "linkage": linkage,
+                "status": res["res"]["statusCode"],
+              }            
+            }
+            if (res["call"]) {
+              var status = {
+                "time": new Date().toISOString(),
+                "csw": data["csw"],
+                "id": data["fileId"],
+                "linkage": linkage,
+                "status": res["call"]["statusCode"],
+              }
+            }
+
+            timber.writePingStatus(dirs, status, function (err, res) {
+              if (err) callback(err);
+              else callback();
+            })
+          }
+        })
+      }
+    })    
+  }
 }
 
 function constructor (dirs, item, callback) {
