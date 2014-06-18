@@ -18,7 +18,7 @@ memwatch.on("stats", function (stats) {
 });
 
 var argv = require("yargs")
-  .usage("Command line utility for archiving NGDS data on Amazon Glacier")
+  .usage("Command line utility for archiving NGDS data on Amazon S3")
   .example("$0 -d -c http://geothermaldata.org/csw?", 
     "Scrape an entire CSW and download all linkages")
   
@@ -35,7 +35,7 @@ var argv = require("yargs")
   .describe("i", "Number of metadata records to return per request")
 
   .alias("v", "vault")
-  .describe("v", "Name of Amazon Glacier vault to pipe data to")
+  .describe("v", "Name of Amazon S3 vault to pipe data to")
 
   .alias("w", "wfs")
   .describe("w", "Scrape WFS linkages")
@@ -46,12 +46,12 @@ var argv = require("yargs")
   .alias("z", "zip")
   .describe("z", "Traverse outputs and force compression")
 
-  .alias("g", "glacier")
-  .describe("g", "Stream compressed directory to AWS Glacier")
+  .alias("t", "s3")
+  .describe("t", "Stream compressed directory to AWS S3")
 
   .alias("d", "download")
   .describe("d", "Scrape a CSW and download linkages")
-//  .demand("c")
+  .demand("c")
   .argv;
 
 var cmdQueue = [];
@@ -246,6 +246,48 @@ function awsGlacier () {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+function pingHosts (dirs, data, globe, callback) {
+  if (data.linkages) {
+    async.each(data.linkages, function (linkage) {
+      if (typeof linkage !== "undefined") {
+        var host = url.parse(linkage)["host"];
+        if (globe.indexOf(host) > -1) {
+          globe.push(host);
+          handle.pingPong(linkage, function (err, res) {
+            if (err) callback(err);
+            else {
+              var status;
+              if (res["res"]) {
+                var status = {
+                  "time": new Date().toISOString(),
+                  "csw": data["csw"],
+                  "id": data["fileId"],
+                  "linkage": linkage,
+                  "status": res["res"]["statusCode"],
+                }
+              }
+              if (res["call"]) {
+                var status = {
+                  "time": new Date().toISOString(),
+                  "csw": data["csw"],
+                  "id": data["fileId"],
+                  "linkage": linkage,
+                  "status": res["call"]["statusCode"],
+                }
+              }
+              timber.writeHostStatus(dirs, status, function (err, res) {
+                if (err) callback(err);
+                else callback();
+              })
+            }
+          })
+        }
+      }
+    })
+  }
+}
+
 function pingLogger (dirs, data, callback) {
   if (data.linkages) {
     async.each(data.linkages, function (linkage) {
