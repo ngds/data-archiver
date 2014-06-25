@@ -3,3 +3,4 @@ node_modules
 awsConfig.json
 .DS_Store
 test/outputs
+.idea*
