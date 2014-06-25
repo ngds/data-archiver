@@ -6,6 +6,7 @@ var url = require("url");
 var fs = require("fs.extra");
 var _ = require("underscore");
 var querystring = require("querystring");
+var lib = require("./lib");
 
 var memwatch = require("memwatch");
 memwatch.on("stats", function (stats) {
@@ -51,11 +52,24 @@ var argv = require("yargs")
 
 var cmdQueue = [];
 if (argv.download) cmdQueue.push(scrapeCsw);
-if (argv.pingpong) cmdQueue.push(pingPongLinks);
+if (argv.pingpong) cmdQueue.push(pingHosts);
 if (argv.zip) cmdQueue.push(zipZap);
 if (argv.s3) cmdQueue.push(awsS3);
 if (argv.wfs) cmdQueue.push(onlyProcessWfS);
 
 async.series(cmdQueue);
 
+function scrapeCsw () {
+  var csw = argv.csw;
+  var increment = argv.increment;
+  var start = argv.start;
+  var end = argv.end;
+  var base = path.dirname(require.main.filename);
+  lib.scrapeCsw(base, csw, increment, start, end, function (data) {
+    console.log(data);
+  });
+}
 
+function pingHosts () {
+  lib.pingHosts()
+};
