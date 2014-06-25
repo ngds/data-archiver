@@ -36,7 +36,7 @@ var argv = require("yargs")
   .alias("w", "wfs")
   .describe("w", "Scrape WFS linkages")
 
-  .alias("p", "pingpong")
+  .alias("p", "pingHosts")
   .describe("p", "Ping every linkage in every metadata record")
 
   .alias("z", "zip")
@@ -52,7 +52,7 @@ var argv = require("yargs")
 
 var cmdQueue = [];
 if (argv.download) cmdQueue.push(scrapeCsw);
-if (argv.pingpong) cmdQueue.push(pingHosts);
+if (argv.pingHosts) cmdQueue.push(pingHosts);
 if (argv.zip) cmdQueue.push(zipZap);
 if (argv.s3) cmdQueue.push(awsS3);
 if (argv.wfs) cmdQueue.push(onlyProcessWfS);
@@ -65,11 +65,18 @@ function scrapeCsw () {
   var start = argv.start;
   var end = argv.end;
   var base = path.dirname(require.main.filename);
-  lib.scrapeCsw(base, csw, increment, start, end, function (data) {
-    console.log(data);
+  lib.scrapeCsw(base, csw, increment, start, end, function (d) {
+    console.log(d);
   });
 }
 
 function pingHosts () {
-  lib.pingHosts()
+  var csw = argv.csw;
+  var increment = argv.increment;
+  var start = argv.start;
+  var end = argv.end;
+  var base = path.dirname(require.main.filename);
+  lib.pingHosts(base, csw, increment, start, end, function (d) {
+    console.log(d);
+  })
 };
