@@ -39,7 +39,6 @@ var argv = require("yargs")
   .alias('l', 'pingLinkages')
   .describe('l', 'Ping every linkage in every metadata record')
 
-
   .alias("v", "vault")
   .describe("v", "Name of Amazon S3 vault to pipe data to")
 
@@ -53,9 +52,9 @@ var argv = require("yargs")
 
 var cmdQueue = [];
 if (argv.download) cmdQueue.push(scrapeCsw);
+if (argv.wfs) cmdQueue.push(scrapeWfs);
 if (argv.pingHosts) cmdQueue.push(pingHosts);
 if (argv.pingLinkages) cmdQueue.push(pingLinkages);
-
 async.series(cmdQueue);
 
 function scrapeCsw () {
@@ -64,9 +63,16 @@ function scrapeCsw () {
   var start = argv.start;
   var end = argv.end;
   var base = path.dirname(require.main.filename);
-  lib.scrapeCsw(base, csw, increment, start, end, function (d) {
-    console.log(d);
-  });
+  lib.scrapeCsw(base, csw, increment, start, end);
+}
+
+function scrapeWfs () {
+  var csw = argv.csw;
+  var increment = argv.increment;
+  var start = argv.start;
+  var end = argv.end;
+  var base = path.dirname(require.main.filename);
+  lib.scrapeWfs(base, csw, increment, start, end);
 }
 
 function pingHosts () {
