@@ -39,19 +39,16 @@ var argv = require("yargs")
   .alias('l', 'pingLinkages')
   .describe('l', 'Ping every linkage in every metadata record')
 
-  .alias("z", "zip")
-  .describe("z", "Traverse outputs and force compression")
 
   .alias("v", "vault")
   .describe("v", "Name of Amazon S3 vault to pipe data to")
-
 
   .alias("t", "s3")
   .describe("t", "Stream compressed directory to AWS S3")
 
   .alias("d", "download")
   .describe("d", "Scrape a CSW and download linkages")
-//  .demand("c")
+  .demand("c")
   .argv;
 
 var cmdQueue = [];
