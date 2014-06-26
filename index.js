@@ -30,17 +30,21 @@ var argv = require("yargs")
   .alias("i", "increment")
   .describe("i", "Number of metadata records to return per request")
 
-  .alias("v", "vault")
-  .describe("v", "Name of Amazon S3 vault to pipe data to")
-
   .alias("w", "wfs")
   .describe("w", "Scrape WFS linkages")
 
-  .alias("p", "pingHosts")
-  .describe("p", "Ping every linkage in every metadata record")
+  .alias("h", "pingHosts")
+  .describe("h", "Ping every host")
+
+  .alias('l', 'pingLinkages')
+  .describe('l', 'Ping every linkage in every metadata record')
 
   .alias("z", "zip")
   .describe("z", "Traverse outputs and force compression")
+
+  .alias("v", "vault")
+  .describe("v", "Name of Amazon S3 vault to pipe data to")
+
 
   .alias("t", "s3")
   .describe("t", "Stream compressed directory to AWS S3")
@@ -53,9 +57,7 @@ var argv = require("yargs")
 var cmdQueue = [];
 if (argv.download) cmdQueue.push(scrapeCsw);
 if (argv.pingHosts) cmdQueue.push(pingHosts);
-if (argv.zip) cmdQueue.push(zipZap);
-if (argv.s3) cmdQueue.push(awsS3);
-if (argv.wfs) cmdQueue.push(onlyProcessWfS);
+if (argv.pingLinkages) cmdQueue.push(pingLinkages);
 
 async.series(cmdQueue);
 
@@ -75,8 +77,17 @@ function pingHosts () {
   var increment = argv.increment;
   var start = argv.start;
   var end = argv.end;
+  var whichPing = "hosts";
   var base = path.dirname(require.main.filename);
-  lib.pingHosts(base, csw, increment, start, end, function (d) {
-    console.log(d);
-  })
-};
+  lib.makePing(base, csw, increment, start, end, whichPing);
+}
+
+function pingLinkages () {
+  var csw = argv.csw;
+  var increment = argv.increment;
+  var start = argv.start;
+  var end = argv.end;
+  var whichPing = "linkages";
+  var base = path.dirname(require.main.filename);
+  lib.makePing(base, csw, increment, start, end, whichPing);
+}
