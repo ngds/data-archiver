@@ -18,11 +18,8 @@ var argv = require("yargs")
   .example("$0 -d -c http://geothermaldata.org/csw?", 
     "Scrape an entire CSW and download all linkages")
 
-  .alias("d", "download")
-  .describe("d", "Scrape a CSW and download linkages")
-
-  .alias("c", "csw")
-  .describe("c", "CSW endpoint to scrape data from")
+  .alias("u", "url")
+  .describe("u", "CSW URL endpoint to scrape data from")
 
   .alias("m", "max")
   .describe("m", "Maximum limit of metadata records to scrape")
@@ -33,14 +30,20 @@ var argv = require("yargs")
   .alias("i", "increment")
   .describe("i", "Number of metadata records to return per request")
 
+  .alias("c", "csw")
+  .describe("c", "Scrape a CSW and download all metadata linkages")
+
+  .alias("w", "wfs")
+  .describe("w", "Scrape a CSW and download all WFS linkages")
+
+  .alias('a', 'all')
+  .describe('a', 'Scrape a CSW and download all linkages and WFS linkages')
+
   .alias("h", "pingHosts")
   .describe("h", "Ping every host")
 
   .alias('l', 'pingLinkages')
   .describe('l', 'Ping every linkage in every metadata record')
-
-  .alias("w", "wfs")
-  .describe("w", "Scrape WFS linkages")
 
   .alias("s", "s3")
   .describe("s", "Stream compressed directory to AWS S3")
@@ -48,19 +51,20 @@ var argv = require("yargs")
   .alias("v", "vault")
   .describe("v", "Name of Amazon S3 vault to pipe data to")
 
-  .demand("c")
+  .demand('u')
   .argv;
 
 var cmdQueue = [];
-if (argv.download) cmdQueue.push(scrapeCsw);
+if (argv.csw) cmdQueue.push(scrapeCsw);
 if (argv.wfs) cmdQueue.push(scrapeWfs);
+if (argv.all) cmdQueue.push(scrapeAll);
 if (argv.pingHosts) cmdQueue.push(pingHosts);
 if (argv.pingLinkages) cmdQueue.push(pingLinkages);
 if (argv.s3 && argv.vault) cmdQueue.push(uploadS3);
 async.series(cmdQueue);
 
 function scrapeCsw () {
-  var csw = argv.csw;
+  var csw = argv.url;
   var increment = argv.increment;
   var start = argv.first;
   var end = argv.end;
@@ -69,7 +73,7 @@ function scrapeCsw () {
 }
 
 function scrapeWfs () {
-  var csw = argv.csw;
+  var csw = argv.url;
   var increment = argv.increment;
   var start = argv.first;
   var end = argv.end;
@@ -77,8 +81,17 @@ function scrapeWfs () {
   lib.scrapeWfs(base, csw, increment, start, end);
 }
 
+function scrapeAll () {
+  var csw = argv.url;
+  var increment = argv.increment;
+  var start = argv.first;
+  var end = argv.end;
+  var base = path.dirname(require.main.filename);
+  lib.scrapeAll(base, csw, increment, start, end);
+}
+
 function pingHosts () {
-  var csw = argv.csw;
+  var csw = argv.url;
   var increment = argv.increment;
   var start = argv.first;
   var end = argv.end;
@@ -88,7 +101,7 @@ function pingHosts () {
 }
 
 function pingLinkages () {
-  var csw = argv.csw;
+  var csw = argv.url;
   var increment = argv.increment;
   var start = argv.first;
   var end = argv.end;
