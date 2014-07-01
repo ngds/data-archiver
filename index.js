@@ -8,11 +8,18 @@ var _ = require("underscore");
 var querystring = require("querystring");
 var lib = require("./lib");
 
+
+// Outputs a statistic for measuring memory leaks in the event loop.  The 'usage trend'
+// is a ratio value of the amount of memory being used by the 'heap' versus what is
+// being used by the 'garbage collector'.  A healthy 'usage trend' will always go up and
+// down -- so long as it keeps going up and down, we're in good shape.  If it keeps going
+// up, then we've probably got a memory leak somewhere.
 var memwatch = require("memwatch");
 memwatch.on("stats", function (stats) {
   console.log("USAGE TREND: " + stats["usage_trend"]);
 });
 
+// Command line arguments... err, 'yarguments'.  Shiber me timbers!
 var argv = require("yargs")
   .usage("Command line utility for archiving NGDS data on Amazon S3")
   .example("$0 -d -c http://geothermaldata.org/csw?", 
@@ -54,6 +61,10 @@ var argv = require("yargs")
   .demand('u')
   .argv;
 
+// Collect command line arguments input by user and throw them in a processing
+// queue.  Yes, this is kind of repetitive and could be abstracted out a bit
+// more, but these functions are all pretty simple and by writing them all out
+// it makes it pretty clear what everything is doing.
 var cmdQueue = [];
 if (argv.csw) cmdQueue.push(scrapeCsw);
 if (argv.wfs) cmdQueue.push(scrapeWfs);
@@ -81,6 +92,13 @@ function scrapeWfs () {
   lib.scrapeWfs(base, csw, increment, start, end);
 }
 
+// This is the only part of the program that could still use some work.
+// Everything works except the constructor functions.  Initially, I build
+// separate data objects out of WFS data and 'everything else' data, which
+// was really useful at first (aherm, memory leaks) but becomes kind of
+// convoluted when we want to run everything all at the same time.  So, we
+// should probably only have one constructor function for all types of data
+// and figure out a way to force efficient memory usage.
 function scrapeAll () {
   var csw = argv.url;
   var increment = argv.increment;
