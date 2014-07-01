@@ -55,8 +55,8 @@ var argv = require("yargs")
   .alias("s", "s3")
   .describe("s", "Stream compressed directory to AWS S3")
 
-  .alias("v", "vault")
-  .describe("v", "Name of Amazon S3 vault to pipe data to")
+  .alias("b", "bucket")
+  .describe("b", "Name of Amazon S3 bucket to upload data to")
 
   .demand('u')
   .argv;
