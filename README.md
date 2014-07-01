@@ -1,21 +1,38 @@
-## NGDS Data Archiver
+NGDS Data Archiver
+==================
+Node.js command line utility for:
+- Scraping XML metadata from CSW and WFS
+- Downloading linkage data from CSW and WFS
+- Pinging hosts and returning status codes
+- Pinging data linkages and returning status codes
+- Writing ping status to CSV files
+- Uploading data to Amazon S3
 
-Tool to archive data in the NGDS.
+####Dependencies
+* Node.js >= v0.10.28 64-bit
+* NPM >= v1.4.9
 
-### Setup
-
-- Clone this repository
-- `npm install`
-- Configure your S3 authorization credentials in a file called awsConfig.json
+####Installation
 ```
-{
-    "accessKeyId": "XXXX",
-    "secretAccessKey": "XXXX",
-    "region": "us-east-1"
-}
+git clone https://github.com/ngds/data-archiver.git
+cd data-archiver
+npm install
 ```
 
-### Running
-From the command line:
-- Run the NGDS Data Archiver: `npm index.js -p`
-- Run code tests: `npm test`
+####Usage
+```
+# Commands for flow control and building requests
+[-u, --url] CSW URL endpoint to scrape data from
+[-m, --max] Upper limit of metadata records to scrape
+[-f, --first] Metadata record to start scraping from
+[-i, --increment] Number of metadata records to return per request
+[-v, --vault]
+
+# Commands for executing utilities
+[-c, --csw]
+[-w, --wfs]
+[-a, --all]
+[-h, --pingHosts]
+[-l, --pingLinkages]
+[-s --S3]
+```
