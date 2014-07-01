@@ -1,524 +1,135 @@
 #!/usr/bin/env node
 
 var async = require("async");
-var parse = require("./parse");
-var handle = require("./handle");
-var archiver = require("./archive");
-var utility = require("./utility");
-var timber = require("./timber");
 var path = require("path");
 var url = require("url");
 var fs = require("fs.extra");
 var _ = require("underscore");
 var querystring = require("querystring");
+var lib = require("./lib");
 
+
+// Outputs a statistic for measuring memory leaks in the event loop.  The 'usage trend'
+// is a ratio value of the amount of memory being used by the 'heap' versus what is
+// being used by the 'garbage collector'.  A healthy 'usage trend' will always go up and
+// down -- so long as it keeps going up and down, we're in good shape.  If it keeps going
+// up, then we've probably got a memory leak somewhere.
 var memwatch = require("memwatch");
 memwatch.on("stats", function (stats) {
   console.log("USAGE TREND: " + stats["usage_trend"]);
 });
 
+// Command line arguments... err, 'yarguments'.  Shiber me timbers!
 var argv = require("yargs")
   .usage("Command line utility for archiving NGDS data on Amazon S3")
   .example("$0 -d -c http://geothermaldata.org/csw?", 
     "Scrape an entire CSW and download all linkages")
-  
-  .alias("c", "csw")
-  .describe("c", "CSW endpoint to scrape data from")
+
+  .alias("u", "url")
+  .describe("u", "CSW URL endpoint to scrape data from")
 
   .alias("m", "max")
   .describe("m", "Maximum limit of metadata records to scrape")
 
-  .alias("s", "start")
-  .describe("s", "Metadata record to start scraping from")
+  .alias("f", "first")
+  .describe("f", "Metadata record to start scraping from")
 
   .alias("i", "increment")
   .describe("i", "Number of metadata records to return per request")
 
-  .alias("v", "vault")
-  .describe("v", "Name of Amazon S3 vault to pipe data to")
+  .alias("c", "csw")
+  .describe("c", "Scrape a CSW and download all metadata linkages")
 
   .alias("w", "wfs")
-  .describe("w", "Scrape WFS linkages")
+  .describe("w", "Scrape a CSW and download all WFS linkages")
 
-  .alias("p", "pingpong")
-  .describe("p", "Ping every linkage in every metadata record")
+  .alias('a', 'all')
+  .describe('a', 'Scrape a CSW and download all linkages and WFS linkages')
 
-  .alias("z", "zip")
-  .describe("z", "Traverse outputs and force compression")
+  .alias("h", "pingHosts")
+  .describe("h", "Ping every host")
 
-  .alias("t", "s3")
-  .describe("t", "Stream compressed directory to AWS S3")
+  .alias('l', 'pingLinkages')
+  .describe('l', 'Ping every linkage in every metadata record')
 
-  .alias("d", "download")
-  .describe("d", "Scrape a CSW and download linkages")
-//  .demand("c")
+  .alias("s", "s3")
+  .describe("s", "Stream compressed directory to AWS S3")
+
+  .alias("b", "bucket")
+  .describe("b", "Name of Amazon S3 bucket to upload data to")
+
+  .demand('u')
   .argv;
 
+// Collect command line arguments input by user and throw them in a processing
+// queue.  Yes, this is kind of repetitive and could be abstracted out a bit
+// more, but these functions are all pretty simple and by writing them all out
+// it makes it pretty clear what everything is doing.
 var cmdQueue = [];
-if (argv.download) cmdQueue.push(scrapeCsw);
-if (argv.pingpong) cmdQueue.push(pingPongLinks);
-if (argv.zip) cmdQueue.push(zipZap);
-if (argv.s3) cmdQueue.push(awsS3);
-if (argv.wfs) cmdQueue.push(onlyProcessWfS);
-
+if (argv.csw) cmdQueue.push(scrapeCsw);
+if (argv.wfs) cmdQueue.push(scrapeWfs);
+if (argv.all) cmdQueue.push(scrapeAll);
+if (argv.pingHosts) cmdQueue.push(pingHosts);
+if (argv.pingLinkages) cmdQueue.push(pingLinkages);
+if (argv.s3 && argv.vault) cmdQueue.push(uploadS3);
 async.series(cmdQueue);
 
 function scrapeCsw () {
-  var base = path.dirname(require.main.filename);
-  var dirs = utility.buildDirs(base);
-  var base = argv.csw;
+  var csw = argv.url;
   var increment = argv.increment;
-  var start = argv.start;
-  var max = argv.max;
-
-  function recursiveScrape (base, start, increment, max) {
-    start = typeof start !== "undefined" ? start : 1;
-    increment = typeof increment !== "undefined" ? increment : 10;
-    max = typeof max !== "undefined" ? max : 10000000;
-
-    utility.buildGetRecords(base, start, increment, function (getUrl) {
-      parse.parseCsw(getUrl, function (data) {
-        if (data) {
-          async.waterfall([
-            function (callback) {
-              constructor(dirs, data, callback);
-            },
-            function (data, callback) {
-              processor(data, callback);
-            },
-/*
-            function (uncompressed, compressed, callback) {
-              zipper(uncompressed, compressed, callback);
-            },
-*/
-          ], function (error, result) {
-            if (error) callback(error);
-          });
-        }
-        if (data["next"]) {
-          console.log(data["next"]);
-          if (data["next"] > 0 && data["next"] <= max)
-            recursiveScrape(base, data["next"], increment, max);
-        }
-      })
-    })    
-  }
-  recursiveScrape(base, start, increment, max);
+  var start = argv.first;
+  var end = argv.end;
+  var base = path.dirname(require.main.filename);
+  lib.scrapeCsw(base, csw, increment, start, end);
 }
 
-function pingPong () {
-  var base = path.dirname(require.main.filename);
-  var dirs = utility.buildDirs(base);
-  var url = argv.csw;
+function scrapeWfs () {
+  var csw = argv.url;
   var increment = argv.increment;
-  var start = argv.start;
-  var max = argv.max;
-
-  function recursivePing (url, start, increment, max) {
-    start = typeof start !== "undefined" ? start : 1;
-    increment = typeof increment !== "undefined" ? increment : 10;
-    max = typeof max !== "undefined" ? max : 10000000;
-
-    utility.buildGetRecords(url, start, increment, function (getUrl) {
-      parse.parseCsw(getUrl, function (data) {
-        if (data) {
-          data["csw"] = url;
-          async.waterfall([
-            function (callback) {
-              pingLogger(dirs, data, callback);
-            },
-          ], function (err, res) {
-            if (err) console.log(err);
-          })
-        }
-
-        if (data["next"]) {
-          console.log("NEXT: ", data["next"]);
-          if (data["next"] > 0 && data["next"] <= max) 
-            recursivePing(url, data["next"]);
-        }
-      })
-    })    
-  }
-  recursivePing(url);
+  var start = argv.first;
+  var end = argv.end;
+  var base = path.dirname(require.main.filename);
+  lib.scrapeWfs(base, csw, increment, start, end);
 }
 
-function zipZap () {
+// This is the only part of the program that could still use some work.
+// Everything works except the constructor functions.  Initially, I build
+// separate data objects out of WFS data and 'everything else' data, which
+// was really useful at first (aherm, memory leaks) but becomes kind of
+// convoluted when we want to run everything all at the same time.  So, we
+// should probably only have one constructor function for all types of data
+// and figure out a way to force efficient memory usage.
+function scrapeAll () {
+  var csw = argv.url;
+  var increment = argv.increment;
+  var start = argv.first;
+  var end = argv.end;
   var base = path.dirname(require.main.filename);
-  var dirs = utility.buildDirs(base);
-  utility.longWalk(dirs["record"], function (parents) {
-    var parentCounter = parents.length;
-    var parentIndex = 0;
-    function recursiveCompress (parent) {
-      var parentExt = path.extname(parent);
-      if (parentExt === ".zip") {
-        parentIndex += 1;
-        if (parentIndex !== parentCounter) {
-          recursiveCompress(parents[parentIndex]);          
-        }
-      }
-
-      if (parentExt !== ".zip") {
-        parentIndex += 1;
-        if (parentIndex <= parentCounter) {
-          utility.longWalk(parent, function (children) {
-            var childCounter = children.length;
-            var childIndex = 0;
-            function recursiveZip (child) {
-              var childExt = path.extname(child);
-              if (childExt === ".zip") {
-                childIndex += 1;
-                if (childIndex <= childCounter) {
-                  console.log(child);
-                  recursiveZip(children[childIndex]);
-                } else {
-                  recursiveCompress(parents[parentIndex]);
-                }
-              }
-
-              if (childExt !== ".zip") {
-                childIndex += 1;
-                if (childIndex <= childCounter) {
-                  zipper(child, child + ".zip", function () {
-                    console.log(child + ".zip");
-                    recursiveZip(children[childIndex]);                    
-                  })
-                } else {
-                  zipper(parent, parent + ".zip", function () {
-                    console.log(parent + ".zip");
-                    recursiveCompress(parents[parentIndex]);
-                  })
-                }                
-              }
-            }
-
-            recursiveZip(children[childIndex]);
-          })
-        }
-      }
-    }
-    recursiveCompress(parents[parentIndex]);
-  }) 
+  lib.scrapeAll(base, csw, increment, start, end);
 }
 
-function awsS3 () {
+function pingHosts () {
+  var csw = argv.url;
+  var increment = argv.increment;
+  var start = argv.first;
+  var end = argv.end;
+  var whichPing = "hosts";
   var base = path.dirname(require.main.filename);
-  var dirs = utility.buildDirs(base);
+  lib.makePing(base, csw, increment, start, end, whichPing);
+}
+
+function pingLinkages () {
+  var csw = argv.url;
+  var increment = argv.increment;
+  var start = argv.first;
+  var end = argv.end;
+  var whichPing = "linkages";
+  var base = path.dirname(require.main.filename);
+  lib.makePing(base, csw, increment, start, end, whichPing);
+}
+
+function uploadS3 () {
   var vault = argv.vault;
-  utility.longWalk(dirs["record"], function (parents) {
-    var parentCounter = parents.length;
-    var parentIndex = 0;
-    function recursiveWalk (parent) {
-      utility.longWalk(parent, function (children) {
-        var childCounter = children.length;
-        var childIndex = 0;
-        function recursiveStroll (child) {
-          utility.longWalk(child, function (cFile) {
-            var cFileCounter = cFile.length;
-            var cFileIndex = 0;
-            function recursiveUpload (file) {
-              archiver.uploadToS3(file, function (res) {
-                console.log(res);
-                cFileIndex += 1;
-                if (cFileIndex < cFileCounter) {
-                  recursiveUpload(cFile[cFileIndex]);
-                }
-                if (cFileIndex === cFileCounter) {
-                  fs.rmrf(children[childIndex], function (err, res) {
-                    if (err) console.log(err);
-                    else {
-                      childIndex += 1;
-                      if (childIndex < childCounter) {
-                        recursiveStroll(children[childIndex]);
-                      }
-                      if (childIndex === childCounter) {
-                        parentIndex += 1;
-                        recursiveWalk(parents[parentIndex]);
-                      }                      
-                    }
-                  })
-                }
-              })
-            }
-            recursiveUpload(cFile[cFileIndex]);
-          })
-        }
-        recursiveStroll(children[childIndex]);
-      })
-    }
-    recursiveWalk(parents[parentIndex]);
-  })
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-function pingHosts (dirs, data, globe, callback) {
-  if (data.linkages) {
-    async.each(data.linkages, function (linkage) {
-      if (typeof linkage !== "undefined") {
-        var host = url.parse(linkage)["host"];
-        if (globe.indexOf(host) > -1) {
-          globe.push(host);
-          handle.pingPong(linkage, function (err, res) {
-            if (err) callback(err);
-            else {
-              var status;
-              if (res["res"]) {
-                var status = {
-                  "time": new Date().toISOString(),
-                  "csw": data["csw"],
-                  "id": data["fileId"],
-                  "linkage": linkage,
-                  "status": res["res"]["statusCode"],
-                }
-              }
-              if (res["call"]) {
-                var status = {
-                  "time": new Date().toISOString(),
-                  "csw": data["csw"],
-                  "id": data["fileId"],
-                  "linkage": linkage,
-                  "status": res["call"]["statusCode"],
-                }
-              }
-              timber.writeHostStatus(dirs, status, function (err, res) {
-                if (err) callback(err);
-                else callback();
-              })
-            }
-          })
-        }
-      }
-    })
-  }
-}
-
-function pingLogger (dirs, data, callback) {
-  if (data.linkages) {
-    async.each(data.linkages, function (linkage) {
-      if (typeof linkage !== "undefined") {
-        handle.pingPong(linkage, function (err, res) {
-          if (err) callback(err);
-          if (res) {
-            var status;
-            if (res["res"]) {
-              var status = {
-                "time": new Date().toISOString(),
-                "csw": data["csw"],
-                "id": data["fileId"],
-                "linkage": linkage,
-                "status": res["res"]["statusCode"],
-              }            
-            }
-            if (res["call"]) {
-              var status = {
-                "time": new Date().toISOString(),
-                "csw": data["csw"],
-                "id": data["fileId"],
-                "linkage": linkage,
-                "status": res["call"]["statusCode"],
-              }
-            }
-
-            timber.writePingStatus(dirs, status, function (err, res) {
-              if (err) callback(err);
-              else callback();
-            })
-          }
-        })
-      }
-    })    
-  }
-}
-
-function constructor (dirs, item, callback) {
-  var linkages = _.map(item.linkages, function (linkage) {
-      var parsedUrl = url.parse(linkage);
-      var host = parsedUrl["host"];
-      if (host) {
-        var parent = path.join(dirs["record"], host);
-        var parentArchive = path.join(dirs["record"], host + ".zip");
-        var child = path.join(parent, item.fileId);
-        var childArchive = path.join(parent, item.fileId + ".zip");
-        var outXML = path.join(child, item.fileId + ".xml");
-        
-        return {
-          "host": host,
-          "parent": parent,
-          "parentArchive": parentArchive,
-          "child": child,
-          "childArchive": childArchive,
-          "linkage": linkage,
-          "outXML": outXML,
-        }          
-      }
-  });
-
-  construct = {
-    "linkages": linkages,
-    "fileId": item.fileId,
-    "fullRecord": item.fullRecord,
-  }
-  callback(null, construct);
-};
-
-function onlyProcessWfS (dir, linkage, callback) {
   var base = path.dirname(require.main.filename);
-  var dirs = utility.buildDirs(base);
-  var base = argv.csw;
-  var increment = argv.increment;
-  var start = argv.start;
-  var max = argv.max;
-
-  function recursiveScrape (base, start, increment, max) {
-    start = typeof start !== "undefined" ? start : 1;
-    increment = typeof increment !== "undefined" ? increment : 10;
-    max = typeof max !== "undefined" ? max : 10000000;
-
-    utility.buildGetRecords(base, start, increment, function (getUrl) {
-      parse.parseCsw(getUrl, function (data) {
-        if (data) {
-          async.waterfall([
-            function (callback) {
-              constructor(dirs, data, callback);
-            },
-            function (data, callback) {
-              processorWfs(data, callback);
-            },
-          ], function (error, result) {
-            if (error) callback(error);
-          });
-        }
-        if (data["next"]) {
-          console.log(data["next"]);
-          if (data["next"] > 0 && data["next"] <= max)
-            recursiveScrape(base, data["next"], increment, max);
-        }
-      })
-    })    
-  }
-  recursiveScrape(base, start, increment, max);
+  lib.baseAwsS3(base, vault);
 }
-
-function processWFS (dir, linkage, callback) {
-  parse.parseGetCapabilitiesWFS(linkage, function (wfsGet) {
-    var wfsCounter = wfsGet.length;
-    var wfsIndex = 0;
-    function recursiveWfs (wfs) {
-      handle.configurePaths(dir, wfs, function (res) {
-        var outPath = path.join(res["directory"], res["file"]);
-        handle.buildDirectory(outPath, function (out) {
-          var urlQuery = url.parse(wfs)["query"];
-          var typeName = querystring.parse(urlQuery)["typeNames"];
-          if (typeName === "aasg:WellLog") {
-            parse.parseWellLogsWFS(res, function (data) {
-              if (data) {
-                var outRecord = path.join(outPath, data["id"]);
-                handle.buildDirectory(outRecord, function (dir) {
-                  var wfsXml = path.join(outRecord, data["id"] + ".xml");
-                  handle.writeXML(wfsXml, data["xml"], function () {
-                    async.each(data["linkages"], function (linkage) {
-                      handle.download(outRecord, linkage, function (res) {
-                        console.log("RES:", res);
-                      })                        
-                    })
-                  })
-                })
-              }
-              if (data === "end_of_stream") {
-                wfsIndex += 1;
-                if (wfsIndex < wfsCounter) {
-                  recursiveWfs(wfsGet[wfsIndex]);
-                }
-                if (wfsIndex === wfsCounter) {
-                  callback();
-                }
-              }
-            })
-          } else {
-            res["directory"] = outPath;
-            parse.parseGetFeaturesWFS(res, function () {
-              wfsIndex += 1;
-              if (wfsIndex < wfsCounter) {
-                recursiveWfs(wfsGet[wfsIndex]);
-              }
-              if (wfsIndex === wfsCounter) {
-                callback();
-              }
-            })
-          }
-        })
-      })
-    }
-    recursiveWfs(wfsGet[wfsIndex]);
-  })    
-}
-
-function processorWfs (construct, callback) {
-  var counter = construct["linkages"].length;
-  var increment = 0;
-  async.each(construct["linkages"], function (data) {
-    if (typeof data !== "undefined") {
-      handle.buildDirectory(data["parent"], function (parent) {
-        handle.buildDirectory(data["child"], function (child) {
-          if (data["linkage"].search("service=WFS") > -1) {
-            processWFS(data["child"], data["linkage"], function () {
-              console.log("ALL DONE: ", data["child"]);
-            })
-          }
-        })
-      })
-    }
-  })
-}
-
-function processor (construct, callback) {
-  var counter = construct["linkages"].length;
-  var increment = 0;
-  async.each(construct["linkages"], function (data) {
-    if (typeof data !== "undefined") {
-      handle.buildDirectory(data["parent"], function (parent) {
-        handle.buildDirectory(data["child"], function (child) {
-          handle.writeXML(data["outXML"], construct["fullRecord"], function () {
-            if (data["linkage"].search("service=WFS") !== -1) {
-              increment += 1;
-              if (increment === counter) {
-                callback(null, data["child"], data["childArchive"]);
-              }
-            } else {
-              handle.download(data["child"], data["linkage"], function () {
-                console.log(data["child"])
-                increment += 1;
-                if (increment === counter) {
-                  callback(null, data["child"], data["childArchive"]);                
-                }
-              })              
-            }
-          })
-        })
-      })
-    }
-  })
-}
-
-function zipper (uncompressed, compressed, callback) {
-  if (uncompressed && compressed) {
-    handle.compressDirectory(uncompressed, compressed, function (res) {
-      callback(null);        
-    })    
-  }
-};
-
-function vault (callback) {
-  archiver.checkGlacierVaults(vault, function (error, response) {
-    if (error) callback(error);
-    else callback(null);
-  });    
-};
-
-function iceberg (uncompressed, compressed, vault, callback) {
-  archiver.uploadToGlacier(uncompressed, compressed, vault, function (error, response) {
-    if (error) callback(error);
-    else callback(response);
-  })
-};
