@@ -78,18 +78,18 @@ function scrapeCsw () {
   var csw = argv.url;
   var increment = argv.increment;
   var start = argv.first;
-  var end = argv.end;
+  var max = argv.max;
   var base = path.dirname(require.main.filename);
-  lib.scrapeCsw(base, csw, start, increment, end);
+  lib.scrapeCsw(base, csw, start, increment, max);
 }
 
 function scrapeWfs () {
   var csw = argv.url;
   var increment = argv.increment;
   var start = argv.first;
-  var end = argv.end;
+  var max = argv.max;
   var base = path.dirname(require.main.filename);
-  lib.scrapeWfs(base, csw, start, increment, end);
+  lib.scrapeWfs(base, csw, start, increment, max);
 }
 
 // This is the only part of the program that could still use some work.
@@ -103,29 +103,29 @@ function scrapeAll () {
   var csw = argv.url;
   var increment = argv.increment;
   var start = argv.first;
-  var end = argv.end;
+  var max = argv.max;
   var base = path.dirname(require.main.filename);
-  lib.scrapeAll(base, csw, start, increment, end);
+  lib.scrapeAll(base, csw, start, increment, max);
 }
 
 function pingHosts () {
   var csw = argv.url;
   var increment = argv.increment;
   var start = argv.first;
-  var end = argv.end;
+  var max = argv.max;
   var whichPing = "hosts";
   var base = path.dirname(require.main.filename);
-  lib.makePing(base, csw, increment, start, end, whichPing);
+  lib.makePing(base, csw, increment, start, max, whichPing);
 }
 
 function pingLinkages () {
   var csw = argv.url;
   var increment = argv.increment;
   var start = argv.first;
-  var end = argv.end;
+  var max = argv.max;
   var whichPing = "linkages";
   var base = path.dirname(require.main.filename);
-  lib.makePing(base, csw, increment, start, end, whichPing);
+  lib.makePing(base, csw, increment, start, max, whichPing);
 }
 
 function uploadS3 () {
