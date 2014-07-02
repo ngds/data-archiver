@@ -49,7 +49,7 @@ node index.js -c -u http://geothermaldata.org/csw? -m 5000
 
 #####Scrape the second 5000 metadata records in a CSW
 ```
-node index.js -c -u http://geothermaldata.org/csw? -f 5000 -m 5000
+node index.js -c -u http://geothermaldata.org/csw? -f 5000 -m 10000
 ```
 
 #####Only scrape WFS

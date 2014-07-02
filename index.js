@@ -80,7 +80,7 @@ function scrapeCsw () {
   var start = argv.first;
   var end = argv.end;
   var base = path.dirname(require.main.filename);
-  lib.scrapeCsw(base, csw, increment, start, end);
+  lib.scrapeCsw(base, csw, start, increment, end);
 }
 
 function scrapeWfs () {
@@ -89,7 +89,7 @@ function scrapeWfs () {
   var start = argv.first;
   var end = argv.end;
   var base = path.dirname(require.main.filename);
-  lib.scrapeWfs(base, csw, increment, start, end);
+  lib.scrapeWfs(base, csw, start, increment, end);
 }
 
 // This is the only part of the program that could still use some work.
@@ -105,7 +105,7 @@ function scrapeAll () {
   var start = argv.first;
   var end = argv.end;
   var base = path.dirname(require.main.filename);
-  lib.scrapeAll(base, csw, increment, start, end);
+  lib.scrapeAll(base, csw, start, increment, end);
 }
 
 function pingHosts () {
