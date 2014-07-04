@@ -4,3 +4,4 @@ awsConfig.json
 .DS_Store
 test/outputs
 .idea*
+rootkey.csv

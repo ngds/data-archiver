@@ -71,7 +71,7 @@ if (argv.wfs) cmdQueue.push(scrapeWfs);
 if (argv.all) cmdQueue.push(scrapeAll);
 if (argv.pingHosts) cmdQueue.push(pingHosts);
 if (argv.pingLinkages) cmdQueue.push(pingLinkages);
-if (argv.s3 && argv.vault) cmdQueue.push(uploadS3);
+if (argv.s3 && argv.bucket) cmdQueue.push(uploadS3);
 async.series(cmdQueue);
 
 function scrapeCsw () {
@@ -129,7 +129,7 @@ function pingLinkages () {
 }
 
 function uploadS3 () {
-  var vault = argv.vault;
+  var bucket = argv.bucket;
   var base = path.dirname(require.main.filename);
-  lib.baseAwsS3(base, vault);
+  lib.baseAwsS3(base, bucket);
 }
