@@ -23,6 +23,7 @@ npm install
 ```
 # Commands for flow control and building requests
 [-u, --url] CSW URL endpoint to scrape data from
+[-o, --host] Host server to scrape data from
 [-m, --max] Upper limit of metadata records to scrape
 [-f, --first] Metadata record to start scraping from
 [-i, --increment] Number of metadata records to return per request
@@ -65,6 +66,11 @@ node index.js -h -u http://geothermaldata.org/csw?
 #####Ping every data linkage
 ```
 node index.js -l -u http://geothermaldata.org/csw?
+```
+
+#####Only scrape data from one server
+```
+node index.js -c -u http://geothermaldata.org/csw? -o ngds.egi.utah.edu
 ```
 
 #####Upload downloaded data to Amazon S3
