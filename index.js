@@ -3,9 +3,7 @@
 var async = require("async");
 var path = require("path");
 var url = require("url");
-var fs = require("fs.extra");
 var _ = require("underscore");
-var querystring = require("querystring");
 var lib = require("./lib");
 
 
@@ -27,6 +25,9 @@ var argv = require("yargs")
 
   .alias("u", "url")
   .describe("u", "CSW URL endpoint to scrape data from")
+
+  .alias("o", "host")
+  .describe("o", "Host server to scrape data from")
 
   .alias("m", "max")
   .describe("m", "Maximum limit of metadata records to scrape")
@@ -66,7 +67,8 @@ var argv = require("yargs")
 // more, but these functions are all pretty simple and by writing them all out
 // it makes it pretty clear what everything is doing.
 var cmdQueue = [];
-if (argv.csw) cmdQueue.push(scrapeCsw);
+if (argv.csw && !(argv.host)) cmdQueue.push(scrapeCsw);
+if (argv.csw && argv.url && argv.host) cmdQueue.push(scrapeServer);
 if (argv.wfs) cmdQueue.push(scrapeWfs);
 if (argv.all) cmdQueue.push(scrapeAll);
 if (argv.pingHosts) cmdQueue.push(pingHosts);
@@ -81,6 +83,16 @@ function scrapeCsw () {
   var max = argv.max;
   var base = path.dirname(require.main.filename);
   lib.scrapeCsw(base, csw, start, increment, max);
+}
+
+function scrapeServer () {
+  var csw = argv.url
+    , host = argv.host
+    , start = argv.first
+    , increment = argv.increment
+    , max = argv.max
+    , base = path.dirname(require.main.filename);
+  lib.scrapeServer(base, csw, host, start, increment, max);
 }
 
 function scrapeWfs () {
